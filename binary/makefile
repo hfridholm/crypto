@@ -26,13 +26,22 @@ RSA_DIR := $(SOURCE_DIR)/rsa
 RSA_SOURCE_FILES := $(wildcard $(RSA_DIR)/*.c)
 RSA_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(RSA_SOURCE_FILES:.c=.o)))
 
-all: encrypt decrypt
+# These are the source files and object files for the FILE library
+FILE_DIR := $(SOURCE_DIR)/file
+
+FILE_SOURCE_FILES := $(wildcard $(FILE_DIR)/*.c)
+FILE_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(FILE_SOURCE_FILES:.c=.o)))
+
+all: encrypt decrypt keygen
 
 encrypt: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(AES_OBJECT_FILES) $(AES_SOURCE_FILES) $(RSA_OBJECT_FILES) $(RSA_SOURCE_FILES)
 	$(COMPILER) $(OBJECT_DIR)/$@.o $(AES_OBJECT_FILES) $(RSA_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
 
 decrypt: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(AES_OBJECT_FILES) $(AES_SOURCE_FILES) $(RSA_OBJECT_FILES) $(RSA_SOURCE_FILES)
 	$(COMPILER) $(OBJECT_DIR)/$@.o $(AES_OBJECT_FILES) $(RSA_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
+
+keygen: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(RSA_OBJECT_FILES) $(RSA_SOURCE_FILES) $(FILE_OBJECT_FILES) $(FILE_SOURCE_FILES)
+	$(COMPILER) $(OBJECT_DIR)/$@.o $(RSA_OBJECT_FILES) $(FILE_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
 
 # These are rules for compiling object files out of source files
 $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/*/%.c 
