@@ -40,9 +40,16 @@ int main(int argc, char* argv[])
 {
   args_parse(argc, argv);
 
-  file_dir_write(NULL, sizeof(char), 0, dir, SKEY_FILE);
+  char skey[4096];
+  memset(skey, '\0', sizeof(skey));
 
-  file_dir_write(NULL, sizeof(char), 0, dir, PKEY_FILE);
+  char pkey[4096];
+  memset(pkey, '\0', sizeof(pkey));
+
+  rsa_base64_create(skey, pkey);
+
+  printf("Private key:\n%s\n", skey);
+  printf("Public key:\n%s\n", pkey);
 
   return 0;
 }
