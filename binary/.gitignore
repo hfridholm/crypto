@@ -1,3 +1,5 @@
 *
 !makefile
 !.gitignore
+!crypto.man
+!keygen.man

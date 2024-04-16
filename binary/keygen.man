@@ -1,0 +1,4 @@
+.TH KEYGEN 1 2024-04-16 Linux
+
+.SH NAME
+keygen - RSA key generation

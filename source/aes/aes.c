@@ -94,3 +94,13 @@ int key_expand(uint32_t* w, const uint32_t* k, uint8_t n)
   }
   return 0; // Success!
 }
+
+int aes_encrypt(void* result, const void* message, size_t size, const char* key)
+{
+  return 0; // Success!
+}
+
+int aes_decrypt(void* result, const void* message, size_t size, const char* key)
+{
+  return 0; // Success!
+}
