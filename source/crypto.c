@@ -1,5 +1,5 @@
 /*
- *
+ * crypto
  */
 
 #include <stdio.h>
@@ -74,7 +74,7 @@ int args_parse(int argc, char* argv[])
   opterr = 0;
 
   int opt;
-  while((opt = getopt(argc, argv, "edck:")) != -1)
+  while((opt = getopt(argc, argv, "edc:k:")) != -1)
   {
     if(opt_parse(opt) != 0) return 1;
   }
@@ -88,49 +88,122 @@ int args_parse(int argc, char* argv[])
 }
 
 /*
+ *
+ */
+void aes_encrypt_handler(const char* message, size_t size, const char* key, ksize_t ksize)
+{
+  char result[size + 16 - (size % 16)];
+  memset(result, '\0', sizeof(result));
+  
+  aes_encrypt(result, message, size, key, ksize);
+
+  file_write(result, sizeof(result), 1, output);
+}
+
+/*
+ *
+ */
+void aes_decrypt_handler(const char* message, size_t size, const char* key, ksize_t ksize)
+{
+  char result[size];
+  memset(result, '\0', sizeof(result));
+  
+  aes_decrypt(result, message, size, key, ksize);
+  
+  file_write(result, sizeof(result), 1, output);
+}
+
+/*
+ *
+ */
+int key_input(char* key, size_t size)
+{
+  char buffer[1024];
+  memset(buffer, '\0', sizeof(buffer));
+
+  printf("Key: ");
+
+  if(fgets(buffer, sizeof(buffer), stdin) == NULL)
+  {
+    printf("No key was inputted\n");
+
+    return 1;
+  }
+
+  memcpy(key, buffer, size);
+
+  return 0;
+}
+
+/*
+ *
+ */
+void key_get(char* key, size_t size)
+{
+  if(kfile) file_read(key, size, 1, kfile);
+
+  else key_input(key, size);
+}
+
+/*
  * RETURN (int status)
  * - 0 | Success!
  * - 1 | No key was inputted
  */
-int aes_handler(const char* message, size_t size)
+int aes128_handler(const char* message, size_t size)
 {
-  char result[size + 1];
-  memset(result, '\0', sizeof(result));
+  size_t ksize = (kfile) ? file_size(kfile) : 16;
 
-  char* key;
-  size_t ksize = 0;
+  char key[ksize + 1];
+  memset(key, '\0', sizeof(key));
 
-  if(kfile)
-  {
-    ksize = file_size(kfile);
+  key_get(key, ksize);
 
-    key = malloc(sizeof(char) * (ksize + 1));
-    memset(key, '\0', ksize + 1);
+  if(encrypt) aes_encrypt_handler(message, size, key, AES_128);
 
-    file_read(key, ksize, 1, kfile);
-  }
-  else
-  {
-    key = malloc(sizeof(char) * 1024);
-    memset(key, '\0', 1024);
+  else        aes_decrypt_handler(message, size, key, AES_128);
 
-    printf("Key: ");
+  return 0; // Success!
+}
 
-    if(fgets(key, sizeof(key), stdin) == NULL)
-    {
-      printf("No key was inputted\n");
+/*
+ * RETURN (int status)
+ * - 0 | Success!
+ * - 1 | No key was inputted
+ */
+int aes192_handler(const char* message, size_t size)
+{
+  size_t ksize = (kfile) ? file_size(kfile) : 24;
 
-      return 1;
-    }
-  }
+  char key[ksize + 1];
+  memset(key, '\0', sizeof(key));
 
-  if(encrypt) aes_encrypt(result, message, size, key);
+  key_get(key, ksize);
 
-  else        aes_decrypt(result, message, size, key);
+  if(encrypt) aes_encrypt_handler(message, size, key, AES_192);
 
-  file_write(result, size, 1, output);
+  else        aes_decrypt_handler(message, size, key, AES_192);
 
-  free(key);
+  return 0; // Success!
+}
+
+/*
+ * RETURN (int status)
+ * - 0 | Success!
+ * - 1 | No key was inputted
+ */
+int aes256_handler(const char* message, size_t size)
+{
+  size_t ksize = (kfile) ? file_size(kfile) : 32;
+
+  char key[ksize + 1];
+  memset(key, '\0', sizeof(key));
+
+  key_get(key, ksize);
+
+  if(encrypt) aes_encrypt_handler(message, size, key, AES_256);
+
+  else        aes_decrypt_handler(message, size, key, AES_256);
 
   return 0; // Success!
 }
@@ -146,7 +219,6 @@ int main(int argc, char* argv[])
   if(args_parse(argc, argv) != 0) return 1;
 
   size_t size = file_size(input);
-
   if(size == 0) return 2;
 
   char message[size + 1];
@@ -154,9 +226,17 @@ int main(int argc, char* argv[])
 
   file_read(message, size, 1, input);
 
-  if(cipher == NULL || !strcmp(cipher, "aes"))
+  if(cipher == NULL || !strcmp(cipher, "aes256"))
   {
-    aes_handler(message, size);
+    aes256_handler(message, size);
+  }
+  else if(!strcmp(cipher, "aes128"))
+  {
+    aes128_handler(message, size);
+  }
+  else if(!strcmp(cipher, "aes192"))
+  {
+    aes192_handler(message, size);
   }
   else if(!strcmp(cipher, "rsa"))
   {
@@ -164,5 +244,5 @@ int main(int argc, char* argv[])
   }
   else printf("Supplied cipher not supported.\n");
 
-  return 0;
+  return 0; // Success!
 }

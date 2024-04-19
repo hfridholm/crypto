@@ -1,106 +1,239 @@
 #include "../aes.h"
-
-static const uint8_t sbox[256] = {
-  0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
-  0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
-  0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0,
-  0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
-  0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc,
-  0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
-  0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a,
-  0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75,
-  0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0,
-  0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84,
-  0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b,
-  0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf,
-  0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85,
-  0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8,
-  0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5,
-  0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2,
-  0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17,
-  0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,
-  0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88,
-  0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,
-  0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c,
-  0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,
-  0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9,
-  0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
-  0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6,
-  0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
-  0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e,
-  0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
-  0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94,
-  0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
-  0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68,
-  0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
-};
-
-#define LSHIFT(a, b) ((a) << (b))
-#define RSHIFT(a, b) ((a) >> (b))
+#include "aes-intern.h"
 
 /*
- * b0: 8 bits, b1: 8 bits, b2: 8 bits, b3: 8 bits
- *
- * RotWord([b0, b1, b2, b3]) = [b1, b2, b3, b0]
+ * SubBytes
  */
-#define ROTWORD(b) (LSHIFT(b, 8) | RSHIFT(b, 24))
-
-// SBOX shift n bits
-#define SBOXS(b, n) LSHIFT(sbox[RSHIFT(b, n) & 0xff], n)
-
-// SBOX on 32-bit word 4 bytes
-#define SUBWORD(b) (SBOXS(b, 24) | SBOXS(b, 16) | SBOXS(b, 8) | SBOXS(b, 0))
-
-
-#define RC(i) ((i) & 0x80 ? ((LSHIFT(i, 1) & 0xff) ^ 0x1b) : (LSHIFT(i, 1) & 0xff))
-
-#define RCON(i) LSHIFT(RC(i), 24)
+void sub_bytes(uint8_t block[16])
+{
+  for(uint8_t index = 0; index < 16; index++)
+  {
+    block[index] = sbox[block[index]];
+  }
+}
 
 /*
- * PARAMS
- * - uint32_t* w       | The 32-bit words of the expanded key
- * - const uint32_t* k | The AES key in 32-bit words
- * - uint8_t n         | The amount of 32-bit words in the AES key
- * 4 words for AES-128, 6 words for AES-192, 8 words for AES-256
+ * SubBytes - inverse
+ */
+void sub_bytes_inverse(uint8_t block[16])
+{
+  for(uint8_t index = 0; index < 16; index++)
+  {
+    block[index] = sbox_inv[block[index]];
+  }
+}
+
+void bytes_switch(uint8_t block[16], uint8_t a, uint8_t b)
+{
+  uint8_t temp = block[a];
+
+  block[a] = block[b];
+
+  block[b] = temp;
+}
+
+/*
+ * ShiftRows
+ */
+void shift_rows(uint8_t block[16])
+{
+  bytes_switch(block, 4, 5);
+  bytes_switch(block, 4, 6);
+  bytes_switch(block, 4, 7);
+
+  bytes_switch(block, 8, 10);
+  bytes_switch(block, 9, 11);
+
+  bytes_switch(block, 12, 13);
+  bytes_switch(block, 12, 14);
+  bytes_switch(block, 12, 15);
+}
+
+/*
+ * ShiftRows - inverse
+ */
+void shift_rows_inverse(uint8_t block[16])
+{
+  bytes_switch(block, 4, 7);
+  bytes_switch(block, 4, 6);
+  bytes_switch(block, 4, 5);
+
+  bytes_switch(block, 9, 11);
+  bytes_switch(block, 8, 10);
+
+  bytes_switch(block, 12, 15);
+  bytes_switch(block, 12, 14);
+  bytes_switch(block, 12, 13);
+}
+
+#define ROW(a, b, c, d)     (a        ^ b         ^ mult2[c]  ^ mult3[d])
+#define ROW_INV(a, b, c, d) (mult9[a] ^ mult11[b] ^ mult13[c] ^ mult14[d])
+
+/*
+ * MixColumns
+ */
+void mix_columns(uint8_t block[16])
+{
+  for(uint8_t column = 0; column < 4; column++)
+  {
+    uint8_t a = block[column];
+    uint8_t b = block[column +  4];
+    uint8_t c = block[column +  8];
+    uint8_t d = block[column + 12];
+
+    block[column]      = ROW(c, d, a, b);
+    block[column +  4] = ROW(d, a, b, c);
+    block[column +  8] = ROW(a, b, c, d);
+    block[column + 12] = ROW(b, c, d, a);
+  }
+}
+
+/*
+ * MixColumns - inverse
+ */
+void mix_columns_inverse(uint8_t block[16])
+{
+  for(uint8_t column = 0; column < 4; column++)
+  {
+    uint8_t a = block[column];
+    uint8_t b = block[column +  4];
+    uint8_t c = block[column +  8];
+    uint8_t d = block[column + 12];
+
+    block[column]      = ROW_INV(d, b, c, a);
+    block[column +  4] = ROW_INV(a, c, d, b);
+    block[column +  8] = ROW_INV(b, d, a, c);
+    block[column + 12] = ROW_INV(c, a, b, d);
+  }
+}
+
+/*
+ * AddRoundKey
+ */
+void add_round_key(uint8_t block[16], const uint8_t rkey[16])
+{
+  for(uint8_t index = 0; index < 16; index++)
+  {
+    block[index] ^= rkey[index];
+  }
+}
+
+/*
  *
+ */
+void aes_block_encrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
+{
+  uint8_t block[16];
+  memcpy(block, input, 16);
+
+  add_round_key(block, rkeys);
+
+  for(int index = 1; index < (rounds - 2); index++)
+  {
+    sub_bytes(block);
+
+    shift_rows(block);
+
+    mix_columns(block);
+    
+    add_round_key(block, rkeys + index * 16);
+  }
+
+  sub_bytes(block);
+
+  shift_rows(block);
+
+  add_round_key(block, rkeys + 16 * (rounds - 1));
+
+  memcpy(result, block, 16);
+}
+
+/*
+ *
+ */
+void aes_block_decrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
+{
+  uint8_t block[16];
+  memcpy(block, input, 16);
+
+  add_round_key(block, rkeys + 16 * (rounds - 1));
+
+  shift_rows_inverse(block);
+
+  sub_bytes_inverse(block);
+
+  for(uint8_t index = (rounds - 2); index-- > 1;)
+  {
+    add_round_key(block, rkeys + 16 * index);
+
+    mix_columns_inverse(block);
+
+    shift_rows_inverse(block);
+
+    sub_bytes_inverse(block);
+  }
+  
+  add_round_key(block, rkeys);
+
+  memcpy(result, block, 16);
+}
+
+/*
  * RETURN (int status)
  * - 0 | Success!
- * - 1 | Invalid key length
+ * - 1 | Failed to expand key
  */
-int key_expand(uint32_t* w, const uint32_t* k, uint8_t n)
+int aes_encrypt(void* result, const void* message, size_t size, const char* key, ksize_t ksize)
 {
-  if(n != 4 && n != 6 && n != 8) return 1;
+  uint8_t rounds = ROUND_KEYS(ksize);
 
-  uint8_t r = ROUND_KEYS(n);
+  uint32_t rkeys[4 * rounds];
+  if(key_expand(rkeys, (uint32_t*) key, ksize) != 0) return 1;
 
-  for(uint8_t index = 0; index < (4 * r); index++)
+  size_t index;
+  uint8_t block[16];
+
+  for(index = 0; index < (size - 16); index += 16)
   {
-    if(index < n)
-    {
-      w[index] = k[index];
-    }
-    else if(index % n == 0)
-    {
-      w[index] = w[index - n] ^ SUBWORD(ROTWORD(w[index - 1])) ^ RCON(index / n);
-    }
-    else if(index % n == 4 && n > 6)
-    {
-      w[index] = w[index - n] ^ SUBWORD(w[index - 1]);
-    }
-    else
-    {
-      w[index] = w[index - n] ^ w[index - 1];
-    }
+    memcpy(block, (uint8_t*) message + index, 16);
+
+    aes_block_encrypt(result + index, block, (uint8_t*) rkeys, rounds);
   }
+
+  memset(block, 0, 16);
+  memcpy(block, (uint8_t*) message + index, size - index);
+
+  aes_block_encrypt(result + index, block, (uint8_t*) rkeys, rounds);
+
   return 0; // Success!
 }
 
-int aes_encrypt(void* result, const void* message, size_t size, const char* key)
+/*
+ * RETURN (int status)
+ * - 0 | Success!
+ * - 1 | Failed to expand key
+ */
+int aes_decrypt(void* result, const void* message, size_t size, const char* key, ksize_t ksize)
 {
-  return 0; // Success!
-}
+  uint8_t rounds = ROUND_KEYS(ksize);
 
-int aes_decrypt(void* result, const void* message, size_t size, const char* key)
-{
+  uint32_t rkeys[4 * rounds];
+  if(key_expand(rkeys, (uint32_t*) key, ksize) != 0) return 1;
+
+  size_t index;
+  uint8_t block[16];
+
+  for(index = 0; index < (size - 16); index += 16)
+  {
+    memcpy(block, (uint8_t*) message + index, 16);
+
+    aes_block_decrypt(result + index, block, (uint8_t*) rkeys, rounds);
+  }
+
+  memset(block, 0, 16);
+  memcpy(block, (uint8_t*) message + index, size - index);
+
+  aes_block_decrypt(result + index, block, (uint8_t*) rkeys, rounds);
+
   return 0; // Success!
 }
