@@ -1,3 +1,9 @@
+#
+# Written by Hampus Fridholm
+#
+# Last updated: 2024-08-31
+#
+
 # These are the names of the targets
 CLEAN_TARGET := clean
 HELP_TARGET := help
@@ -16,29 +22,28 @@ BINARY_DIR := ../binary
 
 # These are the source files and object files for the AES library
 AES_DIR := $(SOURCE_DIR)/aes
-
 AES_SOURCE_FILES := $(wildcard $(AES_DIR)/*.c)
-AES_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(AES_SOURCE_FILES:.c=.o)))
 
 # These are the source files and object files for the RSA library
 RSA_DIR := $(SOURCE_DIR)/rsa
-
 RSA_SOURCE_FILES := $(wildcard $(RSA_DIR)/*.c)
-RSA_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(RSA_SOURCE_FILES:.c=.o)))
 
-# These are the source files and object files for the FILE library
-FILE_DIR := $(SOURCE_DIR)/file
+CRYPTO_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/sha256.c
+CRYPTO_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(CRYPTO_SOURCE_FILES:.c=.o)))
 
-FILE_SOURCE_FILES := $(wildcard $(FILE_DIR)/*.c)
-FILE_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(FILE_SOURCE_FILES:.c=.o)))
+KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c
+KEYGEN_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(KEYGEN_SOURCE_FILES:.c=.o)))
 
-all: crypto keygen
+# These are the executable programs that you can create
+PROGRAMS := crypto keygen
 
-crypto: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(AES_OBJECT_FILES) $(AES_SOURCE_FILES) $(RSA_OBJECT_FILES) $(RSA_SOURCE_FILES) $(FILE_OBJECT_FILES) $(FILE_SOURCE_FILES)
-	$(COMPILER) $(OBJECT_DIR)/$@.o $(AES_OBJECT_FILES) $(RSA_OBJECT_FILES) $(FILE_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
+all: $(PROGRAMS)
 
-keygen: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(RSA_OBJECT_FILES) $(RSA_SOURCE_FILES) $(FILE_OBJECT_FILES) $(FILE_SOURCE_FILES)
-	$(COMPILER) $(OBJECT_DIR)/$@.o $(RSA_OBJECT_FILES) $(FILE_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
+crypto: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(CRYPTO_OBJECT_FILES) $(CRYPTO_SOURCE_FILES)
+	$(COMPILER) $(OBJECT_DIR)/$@.o $(CRYPTO_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
+
+keygen: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(KEYGEN_OBJECT_FILES) $(KEYGEN_SOURCE_FILES)
+	$(COMPILER) $(OBJECT_DIR)/$@.o $(KEYGEN_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
 
 # These are rules for compiling object files out of source files
 $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/*/%.c 
@@ -46,9 +51,6 @@ $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/*/%.c
 
 $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.c 
 	$(COMPILER) $< -c $(COMPILE_FLAGS) -o $@
-
-# These are the executable programs that you can create
-PROGRAMS := $(patsubst %.c, %, $(notdir $(wildcard $(SOURCE_DIR)/*.c)))
 
 # These are the files that should be cleaned
 DELETE_FILES := $(OBJECT_DIR)/*.o $(PROGRAMS)

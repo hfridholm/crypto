@@ -3,14 +3,10 @@
 
 #include <stdio.h>
 
-extern size_t file_size(const char* filepath);
+extern size_t file_size_get(const char* filepath);
 
-extern int file_read(void* pointer, size_t size, size_t nmemb, const char* filepath);
+extern size_t file_read(void* pointer, size_t size, const char* filepath);
 
-extern int file_write(const void* pointer, size_t size, size_t nmemb, const char* filepath);
-
-extern int file_dir_read(void* pointer, size_t size, size_t nmemb, const char* dir, const char* name);
-
-extern int file_dir_write(const void* pointer, size_t size, size_t nmemb, const char* dir, const char* name);
+extern size_t file_write(const void* pointer, size_t size, const char* filepath);
 
 #endif // FILE_H
