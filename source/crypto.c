@@ -1,5 +1,9 @@
 /*
- * crypto
+ * crypto - cryptography utillity
+ *
+ * Written by Hampus Fridholm
+ *
+ * Last updated: 2024-08-31
  */
 
 #include <stdio.h>
@@ -8,115 +12,114 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+#include <argp.h>
 
 #include "aes.h"
 #include "file.h"
 
-bool encrypt = true;
+static char doc[] = "crypto - cryptography utillity";
 
-char* input  = NULL;
-char* output = NULL;
+static char args_doc[] = "[INPUT] [OUTPUT]";
 
-char* cipher = NULL;
-char* kfile  = NULL;
+static struct argp_option options[] =
+{
+  { "cipher",  'c', "STRING", 0, "Encryption function" },
+  { "key",     'k', "FILE",   0, "Encryption key file" },
+  { "encrypt", 'e', 0,        0, "Encrypt message" },
+  { "decrypt", 'd', 0,        0, "Decrypt message" },
+  { 0 }
+};
+
+struct args
+{
+  char* args[2];
+  char* cipher;
+  char* key_file;
+  bool  encrypt;
+};
+
+struct args args =
+{
+  .cipher    = "aes256",
+  .key_file  = NULL,
+  .encrypt   = true
+};
 
 /*
- * Output text when something is wrong with an option
+ * This is the option parsing function used by argp
  */
-void opt_wrong(void)
+static error_t opt_parse(int key, char* arg, struct argp_state* state)
 {
-  if(optopt == 'a')
-    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-  else if(isprint(optopt))
-    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
-  else
-    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
-}
+  struct args* args = state->input;
 
-/*
- * PARAMS
- * - int opt | The option to parse
- *
- * RETURN (int status)
- * - 0 | Success!
- * - 1 | Something wrong with option
- */
-int opt_parse(int opt)
-{
-  switch(opt)
+  switch(key)
   {
-    case 'e': encrypt = true; break;
+    case 'c':
+      args->cipher = arg;
+      break;
 
-    case 'd': encrypt = false; break;
+    case 'k':
+      args->key_file = arg;
+      break;
 
-    case 'c': cipher = optarg; break;
+    case 'd':
+      args->encrypt = false;
+      break;
 
-    case 'k': kfile = optarg; break;
+    case 'e':
+      args->encrypt = true;
+      break;
 
-    case '?': opt_wrong(); return 1;
+    case ARGP_KEY_ARG:
+      if(state->arg_num >= 2) argp_usage(state);
 
-    default : abort();
-  }
-  return 0; // Success!
-}
+      args->args[state->arg_num] = arg;
+      break;
 
-/*
- * PARAMS (same as main)
- * - int argc     | The amount of arguments
- * - char* argv[] | The array of arguments
- *
- * RETURN
- * - 0 | Success!
- * - 1 | No input and output file was supplied
- */
-int args_parse(int argc, char* argv[])
-{
-  opterr = 0;
+    case ARGP_KEY_END:
+      if(state->arg_num < 2) argp_usage(state);
 
-  int opt;
-  while((opt = getopt(argc, argv, "edc:k:")) != -1)
-  {
-    if(opt_parse(opt) != 0) return 1;
+      break;
+
+    default:
+      return ARGP_ERR_UNKNOWN;
   }
 
-  if(optind > (argc - 2)) return 1;
-
-  input  = argv[optind++];
-  output = argv[optind++];
-
-  return 0; // Success!
+  return 0;
 }
 
 /*
  *
  */
-void aes_encrypt_handler(const char* message, size_t size, const char* key, ksize_t ksize)
+static void aes_encrypt_handler(const char* message, size_t size, const char* key, size_t key_size)
 {
   char result[size + 16 - (size % 16)];
   memset(result, '\0', sizeof(result));
   
-  aes_encrypt(result, message, size, key, ksize);
+  aes_encrypt(result, message, size, key, key_size);
 
-  file_write(result, sizeof(result), 1, output);
+  file_write(result, sizeof(result), 1, args.args[1]);
 }
 
 /*
  *
  */
-void aes_decrypt_handler(const char* message, size_t size, const char* key, ksize_t ksize)
+static void aes_decrypt_handler(const char* message, size_t size, const char* key, size_t key_size)
 {
   char result[size];
   memset(result, '\0', sizeof(result));
   
-  aes_decrypt(result, message, size, key, ksize);
+  aes_decrypt(result, message, size, key, key_size);
   
-  file_write(result, sizeof(result), 1, output);
+  file_write(result, sizeof(result), 1, args.args[1]);
 }
 
 /*
- *
+ * RETURN (int status)
+ * - 0 | Success!
+ * - 1 | No key was inputted
  */
-int key_input(char* key, size_t size)
+static int key_input(char* key, size_t size)
 {
   char buffer[1024];
   memset(buffer, '\0', sizeof(buffer));
@@ -138,9 +141,9 @@ int key_input(char* key, size_t size)
 /*
  *
  */
-void key_get(char* key, size_t size)
+static void key_get(char* key, size_t size)
 {
-  if(kfile) file_read(key, size, 1, kfile);
+  if(args.key_file) file_read(key, size, 1, args.key_file);
 
   else key_input(key, size);
 }
@@ -150,18 +153,18 @@ void key_get(char* key, size_t size)
  * - 0 | Success!
  * - 1 | No key was inputted
  */
-int aes128_handler(const char* message, size_t size)
+static int aes128_handler(const char* message, size_t size)
 {
-  size_t ksize = (kfile) ? file_size(kfile) : 16;
+  size_t key_size = (args.key_file) ? file_size(args.key_file) : 16;
 
-  char key[ksize + 1];
+  char key[key_size + 1];
   memset(key, '\0', sizeof(key));
 
-  key_get(key, ksize);
+  key_get(key, key_size);
 
-  if(encrypt) aes_encrypt_handler(message, size, key, AES_128);
+  if(args.encrypt) aes_encrypt_handler(message, size, key, AES_128);
 
-  else        aes_decrypt_handler(message, size, key, AES_128);
+  else             aes_decrypt_handler(message, size, key, AES_128);
 
   return 0; // Success!
 }
@@ -171,18 +174,18 @@ int aes128_handler(const char* message, size_t size)
  * - 0 | Success!
  * - 1 | No key was inputted
  */
-int aes192_handler(const char* message, size_t size)
+static int aes192_handler(const char* message, size_t size)
 {
-  size_t ksize = (kfile) ? file_size(kfile) : 24;
+  size_t key_size = (args.key_file) ? file_size(args.key_file) : 24;
 
-  char key[ksize + 1];
+  char key[key_size + 1];
   memset(key, '\0', sizeof(key));
 
-  key_get(key, ksize);
+  key_get(key, key_size);
 
-  if(encrypt) aes_encrypt_handler(message, size, key, AES_192);
+  if(args.encrypt) aes_encrypt_handler(message, size, key, AES_192);
 
-  else        aes_decrypt_handler(message, size, key, AES_192);
+  else             aes_decrypt_handler(message, size, key, AES_192);
 
   return 0; // Success!
 }
@@ -192,21 +195,23 @@ int aes192_handler(const char* message, size_t size)
  * - 0 | Success!
  * - 1 | No key was inputted
  */
-int aes256_handler(const char* message, size_t size)
+static int aes256_handler(const char* message, size_t size)
 {
-  size_t ksize = (kfile) ? file_size(kfile) : 32;
+  size_t key_size = (args.key_file) ? file_size(args.key_file) : 32;
 
-  char key[ksize + 1];
+  char key[key_size + 1];
   memset(key, '\0', sizeof(key));
 
-  key_get(key, ksize);
+  key_get(key, key_size);
 
-  if(encrypt) aes_encrypt_handler(message, size, key, AES_256);
+  if(args.encrypt) aes_encrypt_handler(message, size, key, AES_256);
 
-  else        aes_decrypt_handler(message, size, key, AES_256);
+  else             aes_decrypt_handler(message, size, key, AES_256);
 
   return 0; // Success!
 }
+
+static struct argp argp = { options, opt_parse, args_doc, doc };
 
 /*
  * RETURNS
@@ -216,29 +221,29 @@ int aes256_handler(const char* message, size_t size)
  */
 int main(int argc, char* argv[])
 {
-  if(args_parse(argc, argv) != 0) return 1;
+  argp_parse(&argp, argc, argv, 0, 0, &args);
 
-  size_t size = file_size(input);
+  size_t size = file_size(args.args[0]);
   if(size == 0) return 2;
 
   char message[size + 1];
   memset(message, '\0', sizeof(message));
 
-  file_read(message, size, 1, input);
+  file_read(message, size, 1, args.args[0]);
 
-  if(cipher == NULL || !strcmp(cipher, "aes256"))
+  if(!strcmp(args.cipher, "aes256"))
   {
     aes256_handler(message, size);
   }
-  else if(!strcmp(cipher, "aes128"))
+  else if(!strcmp(args.cipher, "aes128"))
   {
     aes128_handler(message, size);
   }
-  else if(!strcmp(cipher, "aes192"))
+  else if(!strcmp(args.cipher, "aes192"))
   {
     aes192_handler(message, size);
   }
-  else if(!strcmp(cipher, "rsa"))
+  else if(!strcmp(args.cipher, "rsa"))
   {
 
   }

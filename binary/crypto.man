@@ -1,23 +1,11 @@
-.TH CRYPTO 1 2024-04-16 Linux
+.TH CRYPTO 1 2024-08-31 Linux
 
 .SH NAME
-crypto - cryptography
+crypto - cryptography utillity
 
 .SH SYNOPSIS
 .B crypto
-[\fIOPTION\fR]... [\fIFILE\fR]...
-
-To encrypt or decrypt, an input file must be supplied using:
-
-.B crypto [\fIOPTION\fR]... [\fIINPUT\fR]
-
-To specify the output file, append it after the input file:
-
-.B crypto [\fIOPTION\fR]... [\fIINPUT\fR] [\fIOUTPUT\fR]
-
-If no output file is supplied, one will be created like the following:
-
-<input file>-output.txt
+[\fIOPTION\fR]... [\fIINPUT\fR] [\fIOUTPUT\fR]
 
 .SH DESCRIPTION
 crypto is a program designed to let the user encrypt and decrypt data using different cryptographic algorithms.
@@ -41,10 +29,16 @@ Choose which cipher to encrypt or decrypt. See all supported ciphers under the \
 
 .SH CIPHERS
 .TP
-.BR AES
+.BR aes128
 
 .TP
-.BR RSA
+.BR aes192
+
+.TP
+.BR aes256
+
+.TP
+.BR rsa
 
 .SH AUTHOR
 Written by Hampus Fridholm.
