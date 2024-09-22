@@ -5,11 +5,12 @@
  *
  * Credit: https://sha256algorithm.com
  *
- * Last updated: 2024-07-01
+ * Last updated: 2024-09-13
  */
 
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 /*
@@ -27,7 +28,6 @@ static char* hs_hash(char hash[64], const uint32_t hs[8])
 
   for(uint8_t index = 0; index < 8; index++)
   {
-    // hash + (index * 8) points to the current 8 characters
     sprintf(temp_hash + (index * 8), "%08x", hs[index]);
   }
 
@@ -201,21 +201,25 @@ static void block_message_prepend(uint32_t* block, const void* message, size_t s
   }
 }
 
-// This is the equivalent to ceil(size / 64)
-#define INIT_CHUNKS(SIZE) (((SIZE) & 0b111111) ? ((SIZE) >> 6) + 1 : (SIZE) >> 6)
+/*
+ * Calculate the initial amount of chunks (no extra chunk)
+ *
+ * This is the equivalent to ceil(size / 64)
+ */
+#define INITIAL_CHUNKS(SIZE) (((SIZE) & 0b111111) ? ((SIZE) >> 6) + 1 : (SIZE) >> 6)
 
 /*
- * Check if the size is between 56 and 64 bytes
- * That is when you have to add an extra chunk
+ * Check if an extra chunk is needed
+ *
+ * Either if the message would occupy the 1-bit and the length bits
+ *     or if the message already occupies a whole chunk
  */
-#define EXTRA_CHUNK(SIZE) (((SIZE) & 0b111000) == 0b111000)
-/*
- * Calculates the amount of message bits in the last chunk
- */
-#define MOD_BITS(SIZE) (((SIZE) & 0b111111) * 8)
+#define EXTRA_CHUNK(SIZE) ((((SIZE) & 0b111000) == 0b111000) || ((SIZE & 0b111111) == 0b000000))
 
-#define CHUNKS(SIZE) (((SIZE) == 0) ? 1 : (EXTRA_CHUNK(SIZE) ? (INIT_CHUNKS(SIZE) + 1) : INIT_CHUNKS(SIZE)))
-#define ZEROS(SIZE) (((SIZE) == 0) ? 448 : (EXTRA_CHUNK(SIZE) ? (959 - MOD_BITS(SIZE)) : (447 - MOD_BITS(SIZE))))
+
+#define CHUNKS(SIZE) (EXTRA_CHUNK(SIZE) ? (INITIAL_CHUNKS(SIZE) + 1) :  INITIAL_CHUNKS(SIZE))
+
+#define ZEROS(SIZE, CHUNKS) (((CHUNKS) * 64 - (SIZE)) * 8 - 64 - 1)
 
 /*
  * Create the message block needed to generate the SHA256 hash
@@ -278,6 +282,7 @@ static char* block_hash(char hash[64], const uint32_t* block, size_t chunks)
     // block + (index * 16) points to the current chunk
     hs_chunk_update(hs, block + (index * 16));
   }
+
   return hs_hash(hash, hs); 
 }
 
@@ -296,11 +301,15 @@ static char* block_hash(char hash[64], const uint32_t* block, size_t chunks)
 char* sha256(char hash[64], const void* message, size_t size)
 {
   size_t   chunks = CHUNKS(size);
-  uint16_t zeros  = ZEROS(size);
+  uint16_t zeros  = ZEROS (size, chunks);
 
-  uint32_t block[chunks * 16];
+  uint32_t* block = malloc(sizeof(uint32_t) * chunks * 16);
 
   block_create(block, chunks, zeros, message, size);
 
-  return block_hash(hash, block, chunks);
+  hash = block_hash(hash, block, chunks);
+
+  free(block);
+
+  return hash;
 }
