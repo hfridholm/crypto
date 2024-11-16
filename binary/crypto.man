@@ -1,4 +1,4 @@
-.TH CRYPTO 1 2024-08-31 Linux
+.TH CRYPTO 1 2024-11-16 Linux
 
 .SH NAME
 crypto - cryptography utillity
@@ -24,10 +24,6 @@ decrypt
 Input a password as a string with this flag, to either encrypt or decrypt a message.
 
 .TP
-.BR \-f " <passfile>"
-Input a file containing the password to either encrypt or decrypt a message.
-
-.TP
 .BR \-c " <cipher>"
 Choose which cipher to encrypt or decrypt. See all supported ciphers under the \fBCIPHERS\fR header.
 
@@ -40,9 +36,6 @@ Choose which cipher to encrypt or decrypt. See all supported ciphers under the \
 
 .TP
 .BR aes256
-
-.TP
-.BR rsa
 
 .SH AUTHOR
 Written by Hampus Fridholm.
