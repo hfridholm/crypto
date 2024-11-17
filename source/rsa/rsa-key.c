@@ -1,8 +1,5 @@
 #include "../rsa.h"
-
-#define MODULUS_SIZE 1024
-
-#define BUFFER_SIZE (((MODULUS_SIZE) / 8) / 2)
+#include "rsa-intern.h"
 
 /*
  * Duplicate a mpz_t variable

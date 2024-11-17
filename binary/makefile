@@ -34,8 +34,11 @@ CRYPTO_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(CRYPTO_SOURCE_FILE
 KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c
 KEYGEN_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(KEYGEN_SOURCE_FILES:.c=.o)))
 
+RSACPT_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c
+RSACPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(RSACPT_SOURCE_FILES:.c=.o)))
+
 # These are the executable programs that you can create
-PROGRAMS := crypto keygen
+PROGRAMS := crypto keygen rsacpt
 
 all: $(PROGRAMS)
 
@@ -44,6 +47,9 @@ crypto: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(CRYPTO_OBJECT_FILES) $(CRYPTO_S
 
 keygen: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(KEYGEN_OBJECT_FILES) $(KEYGEN_SOURCE_FILES)
 	$(COMPILER) $(OBJECT_DIR)/$@.o $(KEYGEN_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
+
+rsacpt: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(RSACPT_OBJECT_FILES) $(RSACPT_SOURCE_FILES)
+	$(COMPILER) $(OBJECT_DIR)/$@.o $(RSACPT_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
 
 # These are rules for compiling object files out of source files
 $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/*/%.c 

@@ -32,4 +32,9 @@ extern int  keys_generate(skey_t* skey, pkey_t* pkey);
 
 extern void keys_free(skey_t* skey, pkey_t* pkey);
 
+
+extern int rsa_encrypt(void* result, const void* message, size_t size, pkey_t* key);
+
+extern int rsa_decrypt(void* result, const void* message, size_t size, skey_t* key);
+
 #endif // RSA_H
