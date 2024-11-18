@@ -3,6 +3,8 @@
  *
  * -b, --bytes | The amount of bytes
  * -d, --dir   | Where to create the key files
+ * -s, --secret | The secret key file
+ * -p, --public | The public key file
  */
 
 #include "file.h"
