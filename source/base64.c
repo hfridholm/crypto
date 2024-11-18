@@ -54,9 +54,14 @@ static void symbols_encode(void* result, size_t r_index, uint8_t buffer[4], int 
 
 /*
  * Encode a message using base64
+ *
+ * RETURN (size_t size)
+ * - The size of the result
  */
-int base64_encode(void* result, const void* message, size_t size)
+size_t base64_encode(void* result, const void* message, size_t size)
 {
+  if(!result || !message) return 0;
+
   size_t m_index, r_index = 0;
 
   uint8_t tmp[3];
@@ -84,9 +89,11 @@ int base64_encode(void* result, const void* message, size_t size)
     map_encode(buffer, tmp);
 
     symbols_encode(result, r_index, buffer, size - m_index);
+
+    r_index += 4;
   }
 
-  return 0;
+  return r_index;
 }
 
 /*
@@ -136,10 +143,13 @@ static int symbols_decode(uint8_t tmp[4], const void* message, size_t m_index)
 
 /*
  * Decode a base64 message
+ *
+ * RETURN (size_t size)
+ * - The size of the result
  */
-int base64_decode(void* result, const void* message, size_t size)
+size_t base64_decode(void* result, const void* message, size_t size)
 {
-  if(!result || !message) return 1;
+  if(!result || !message) return 0;
 
   size_t m_index, r_index = 0;
 
@@ -153,10 +163,12 @@ int base64_decode(void* result, const void* message, size_t size)
     map_decode(buffer, tmp);
 
     // Either copy 3, or 2 bytes
-    memcpy(result + r_index, buffer, (bytes > 2) ? 3 : 2);
+    int r_incr = (bytes > 2) ? 3 : 2;
 
-    r_index += 3;
+    memcpy(result + r_index, buffer, r_incr);
+
+    r_index += r_incr;
   }
 
-  return 0;
+  return r_index;
 }

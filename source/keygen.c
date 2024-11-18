@@ -14,10 +14,71 @@
 #include <time.h>
 #include <stdlib.h>
 
-extern int base64_encode(void* result, const void* message, size_t size);
+extern size_t base64_encode(void* result, const void* message, size_t size);
 
-extern int base64_decode(void* result, const void* message, size_t size);
+extern size_t base64_decode(void* result, const void* message, size_t size);
 
+/*
+ *
+ */
+static size_t skey_base64_encode(void* result, const skey_t* key)
+{
+  char buffer[10000];
+  memset(buffer, '\0', sizeof(buffer));
+
+  size_t size = 0;
+
+  skey_encode(buffer, &size, key);
+
+  printf("size: %ld\n", size);
+
+  return base64_encode(result, &buffer, size);
+}
+
+/*
+ *
+ */
+static size_t pkey_base64_encode(void* result, const pkey_t* key)
+{
+  char buffer[10000];
+  memset(buffer, '\0', sizeof(buffer));
+
+  size_t size = 0;
+
+  pkey_encode(buffer, &size, key);
+
+  return base64_encode(result, &buffer, size);
+}
+
+/*
+ *
+ */
+static void pkey_handler(pkey_t* key)
+{
+  char buffer[10000];
+  memset(buffer, '\0', sizeof(buffer));
+
+  size_t size = pkey_base64_encode(buffer, key);
+
+  file_write(buffer, size, "pkey");
+}
+
+/*
+ *
+ */
+static void skey_handler(skey_t* key)
+{
+  char buffer[10000];
+  memset(buffer, '\0', sizeof(buffer));
+
+  size_t size = skey_base64_encode(buffer, key);
+
+  file_write(buffer, size, "skey");
+}
+
+/*
+ *
+ */
 int main(int argc, char* argv[])
 {
   srand(time(NULL));
@@ -27,11 +88,9 @@ int main(int argc, char* argv[])
 
   keys_generate(&skey, &pkey);
 
-  /*
   printf("pkey:\n");
   gmp_printf("n: %Zd\n", pkey.n);
   gmp_printf("e: %Zd\n", pkey.e);
-  */
 
   printf("skey:\n");
   gmp_printf("n: %Zd\n", skey.n);
@@ -40,41 +99,11 @@ int main(int argc, char* argv[])
   gmp_printf("p: %Zd\n", skey.p);
   gmp_printf("q: %Zd\n", skey.q);
 
-  char skey_buffer[10000];
-  memset(skey_buffer, '\0', sizeof(skey_buffer));
 
-  size_t size = 0;
+  pkey_handler(&pkey);
 
-  skey_encode(skey_buffer, &size, &skey);
+  skey_handler(&skey);
 
-
-  char skey_base64[10000];
-  memset(skey_base64, '\0', sizeof(skey_base64));
-
-  base64_encode(skey_base64, &skey_buffer, size);
-
-  printf("skey_base64:\n%s\n", skey_base64);
-
-
-
-  skey_t tkey;
-
-  char tkey_buffer[10000];
-  memset(tkey_buffer, '\0', sizeof(tkey_buffer));
-
-  base64_decode(tkey_buffer, skey_base64, strlen(skey_base64));
-
-
-  skey_decode(&tkey, tkey_buffer, size);
-
-  printf("tkey:\n");
-  gmp_printf("n: %Zd\n", tkey.n);
-  gmp_printf("e: %Zd\n", tkey.e);
-  gmp_printf("d: %Zd\n", tkey.d);
-  gmp_printf("p: %Zd\n", tkey.p);
-  gmp_printf("q: %Zd\n", tkey.q);
-
-  skey_free(&tkey);
 
   keys_free(&skey, &pkey);
 
