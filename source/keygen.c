@@ -47,11 +47,27 @@ int main(int argc, char* argv[])
 
   skey_encode(skey_buffer, &size, &skey);
 
+
+  char skey_base64[10000];
+  memset(skey_base64, '\0', sizeof(skey_base64));
+
+  base64_encode(skey_base64, &skey_buffer, size);
+
+  printf("skey_base64:\n%s\n", skey_base64);
+
+
+
   skey_t tkey;
 
-  skey_decode(&tkey, skey_buffer, size);
+  char tkey_buffer[10000];
+  memset(tkey_buffer, '\0', sizeof(tkey_buffer));
 
-  printf("skey:\n");
+  base64_decode(tkey_buffer, skey_base64, strlen(skey_base64));
+
+
+  skey_decode(&tkey, tkey_buffer, size);
+
+  printf("tkey:\n");
   gmp_printf("n: %Zd\n", tkey.n);
   gmp_printf("e: %Zd\n", tkey.e);
   gmp_printf("d: %Zd\n", tkey.d);
