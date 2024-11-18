@@ -7,6 +7,10 @@
 #include <time.h>
 #include <stdlib.h>
 
+extern int base64_encode(void* result, const void* message, size_t size);
+
+extern int base64_decode(void* result, const void* message, size_t size);
+
 int main(int argc, char* argv[])
 {
   srand(time(NULL));
