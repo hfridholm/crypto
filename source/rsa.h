@@ -14,6 +14,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MODULUS_SIZE 1024
+
+#define ENCRYPT_SIZE (MODULUS_SIZE / 8)
+
+#define BUFFER_SIZE ((MODULUS_SIZE / 8) / 2)
+
+#define MESSAGE_SIZE ((MODULUS_SIZE / 8) - 11)
+
 typedef struct
 {
   mpz_t n; // Modulus
@@ -34,9 +42,9 @@ extern int  keys_generate(skey_t* skey, pkey_t* pkey);
 extern void keys_free(skey_t* skey, pkey_t* pkey);
 
 
-extern int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t msize, pkey_t* key);
+extern int rsa_encrypt(void* result, const void* message, size_t size, pkey_t* key);
 
-extern int rsa_decrypt(void* result, size_t* rsize, const void* message, size_t msize, skey_t* key);
+extern int rsa_decrypt(void* result, const void* message, size_t size, skey_t* key);
 
 
 extern int skey_encode(void* result, size_t* size, const skey_t* key);

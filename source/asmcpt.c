@@ -131,7 +131,7 @@ static void skey_handler(skey_t* key)
 }
 
 /*
- *
+ * Generate random bytes as the key used for encryption
  */
 static void aes_key_generate(char buffer[32])
 {
@@ -151,36 +151,39 @@ static void encrypt_handler(const void* message, size_t size, pkey_t* pkey)
 
   aes_key_generate(aes_key);
 
-  // Perform aes encryption/decryption
-  // aes_encrypt_handler(message, size, aes_key);
+  printf("KEY: ");
+  for(int index = 0; index < 32; index++)
+  {
+    printf("%x", aes_key[index] & 0xFF);
+  }
+  printf("\n");
 
-
-  char encrypt[1024];
+  char encrypt[ENCRYPT_SIZE];
   memset(encrypt, '\0', sizeof(encrypt));
 
-  size_t enc_size = 0;
-
-  rsa_encrypt(encrypt, &enc_size, aes_key, 32, pkey);
+  rsa_encrypt(encrypt, aes_key, 32, pkey);
   
-
-  printf("enc_size: %d\n", (char) enc_size);
-  
+  printf("RSA: ");
+  for(int index = 0; index < ENCRYPT_SIZE; index++)
+  {
+    printf("%x", encrypt[index] & 0xFF);
+  }
+  printf("\n");
 
   size_t aes_encrypt_size = (size + 15) & ~15;
 
 
-  char* buffer = malloc(sizeof(char) * (aes_encrypt_size + enc_size + 1));
+  char* buffer = malloc(sizeof(char) * (aes_encrypt_size + ENCRYPT_SIZE));
 
-  buffer[0] = (char) enc_size;
+  // 1. First comes the RSA encrypted AES key
+  memcpy(buffer, encrypt, ENCRYPT_SIZE);
 
-  memcpy(buffer + 1, encrypt, enc_size);
+  // 2. Then comes the AES encrypted payload
+  aes_encrypt(buffer + ENCRYPT_SIZE, message, size, aes_key, AES_256);
 
+  file_write(buffer, aes_encrypt_size + ENCRYPT_SIZE, args.args[1]);
 
-
-  aes_encrypt(buffer + 1 + enc_size, message, size, aes_key, AES_256);
-
-
-  file_write(buffer, aes_encrypt_size + enc_size + 1, args.args[1]);
+  free(buffer);
 }
 
 /*
@@ -188,37 +191,39 @@ static void encrypt_handler(const void* message, size_t size, pkey_t* pkey)
  */
 static void decrypt_handler(const void* message, size_t size, skey_t* skey)
 {
-  size_t enc_size = (size_t) *((uint8_t*) message);
+  printf("ENCRYPT_SIZE: %d\n", ENCRYPT_SIZE);
+  printf("MESSAGE_SIZE: %d\n", MESSAGE_SIZE);
+  printf("size: %ld\n", size);
 
+  printf("RSA: ");
+  for(int index = 0; index < ENCRYPT_SIZE; index++)
+  {
+    printf("%x", ((char*)message)[index] & 0xFF);
+  }
+  printf("\n");
 
-  printf("enc_size: %ld\n", enc_size);
+  char aes_key[MESSAGE_SIZE];
+  memset(aes_key, '\0', sizeof(aes_key));
 
+  // 1. First comes the RSA encrypted AES key
+  rsa_decrypt(aes_key, message, ENCRYPT_SIZE, skey);
 
-  char encrypt[enc_size];
+  printf("KEY: ");
+  for(int index = 0; index < MESSAGE_SIZE; index++)
+  {
+    printf("%x", aes_key[index] & 0xFF);
+  }
+  printf("\n");
 
-  memcpy(encrypt, message + 1, enc_size);
+  char* result = malloc(sizeof(char) * (size - ENCRYPT_SIZE));
+  memset(result, '\0', (size - ENCRYPT_SIZE));
 
+  // 2. Then comes the AES encrypted payload
+  aes_decrypt(result, message + ENCRYPT_SIZE, (size - ENCRYPT_SIZE), aes_key, AES_256);
 
-  char decrypt[1024];
-  memset(decrypt, '\0', sizeof(decrypt));
-
-  size_t dec_size = 0;
-
-  rsa_decrypt(decrypt, &dec_size, encrypt, enc_size, skey);
-  
-
-  printf("dec_size: %ld\n", dec_size);
-
-
-  char* result = malloc(sizeof(char) * (size - 1 - enc_size));
-
-  aes_decrypt(result, message + 1 + enc_size, (size - 1 - enc_size), decrypt, AES_256);
-
-  file_write(result, (size - 1 - enc_size), args.args[1]);
+  file_write(result, (size - ENCRYPT_SIZE), args.args[1]);
 
   free(result);
-
-  // file_write(message + 1 + enc_size, (size - 1 - enc_size), args.args[1]);
 }
 
 static struct argp argp = { options, opt_parse, args_doc, doc };
