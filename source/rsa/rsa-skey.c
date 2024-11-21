@@ -4,25 +4,26 @@
 typedef struct
 {
   size_t ns;
-  char   n[128];
+  char   n[ENCRYPT_SIZE];
   size_t es;
   char   e[1];
   size_t ds;
-  char   d[128];
+  char   d[ENCRYPT_SIZE];
   size_t ps;
-  char   p[64];
+  char   p[BUFFER_SIZE];
   size_t qs;
-  char   q[64];
+  char   q[BUFFER_SIZE];
 } skey_enc_t;
 
 /*
- *
+ * It is important to initialize the skey_enc_t to 0,
+ * otherwise the result would be written uninitialized values
  */
 int skey_encode(void* result, size_t* size, const skey_t* key)
 {
   if(!result || !size || !key) return 1;
 
-  skey_enc_t key_enc;
+  skey_enc_t key_enc = { 0 };
 
   mpz_export(key_enc.n, &key_enc.ns, 1, sizeof(char), 0, 0, key->n);
 

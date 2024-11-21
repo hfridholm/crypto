@@ -1,4 +1,5 @@
 # Notes
+- allocate the result memory in skey_encode instead of filling result.
 
 ## Must
 - keygen generates keys that always work with each other!

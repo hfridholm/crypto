@@ -46,7 +46,7 @@ static int choose_d(mpz_t d, const mpz_t e, const mpz_t phi)
 
   mpz_gcd(tmp, e, phi);
 
-  // gmp_printf("gcd(e, phi) = [%Zs]\n", tmp);
+  gmp_printf("gcd(e, phi) = [%Zs]\n", tmp);
 
   mpz_clear(tmp);
 
@@ -98,7 +98,8 @@ static void prime_tweak(mpz_t prime, mpz_t e)
 
   mpz_mod(tmp, prime, e);
 
-  while(!mpz_cmp_ui(tmp, 1))
+  // prime must not be congruent to 1 mod e
+  while(mpz_cmp_ui(tmp, 1) == 0)
   {
     mpz_nextprime(prime, prime);
 
@@ -125,13 +126,15 @@ static void primes_generate(mpz_t p, mpz_t q, mpz_t e)
   {
     prime_generate(q);
 
-    prime_tweak(p, e);
+    prime_tweak(q, e);
   }
   while(mpz_cmp(p, q) == 0);
 }
 
 /*
  * Generate the p, q, n, e and d values needed for the keys
+ *
+ * Probably: Only do the operation once, and remove the for loop
  */
 static void key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz_t phi)
 {
@@ -152,7 +155,7 @@ static void key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz
     // 5. Choose d
     if(choose_d(d, e, phi) == 0) break;
 
-    // printf("Failed to generate key values: %ld\n", count);
+    printf("Failed to generate key values: %ld\n", count);
   }
 }
 

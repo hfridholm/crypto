@@ -88,6 +88,7 @@ size_t base64_encode(void* result, const void* message, size_t size)
 
     map_encode(buffer, tmp);
 
+    // Probably: Change argument bytes (1+) ?
     symbols_encode(result, r_index, buffer, size - m_index);
 
     r_index += 4;

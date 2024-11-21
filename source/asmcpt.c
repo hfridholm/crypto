@@ -126,11 +126,15 @@ static int pkey_get(pkey_t* key)
 
   if(dir_file_read(base64, file_size, args.dir, args.public) == 0)
   {
+    fprintf(stderr, "asmcpt: Failed to read file\n");
+
     return 1;
   }
 
   if(base64_pkey_decode(key, base64, file_size) != 0)
   {
+    fprintf(stderr, "asmcpt: Failed to decode base64\n");
+
     return 2;
   }
 
@@ -188,6 +192,12 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
 
   aes_key_generate(aes_key);
 
+  printf("KEY: ");
+  for(int index = 0; index < 32; index++)
+  {
+    printf("%x", aes_key[index] & 0xFF);
+  }
+  printf("\n");
 
   // 2. Encrypt the AES key using RSA
   char aes_key_enc[ENCRYPT_SIZE];
@@ -248,6 +258,12 @@ static int asm_decrypt(char** result, size_t* rsize, const void* message, size_t
 
   rsa_decrypt(aes_key, NULL, message + 1, rsa_size, skey);
 
+  printf("KEY: ");
+  for(int index = 0; index < 32; index++)
+  {
+    printf("%x", aes_key[index] & 0xFF);
+  }
+  printf("\n");
 
   // 3. Then comes the AES encrypted message
   size_t aes_message_size = (size - 1 - rsa_size);

@@ -6,21 +6,7 @@
  * Last updated: 2024-11-21
  */
 
-#include "file.h"
-#include "rsa.h"
-#include "aes.h"
-
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <argp.h>
-
-extern size_t base64_encode(void* result, const void* message, size_t size);
-
-extern size_t base64_decode(void* result, const void* message, size_t size);
-
+#include "keygen.h"
 
 #define SKEY_FILE "skey"
 #define PKEY_FILE "pkey"
@@ -100,7 +86,7 @@ static size_t skey_base64_encode(void* result, const skey_t* key)
 
   skey_encode(buffer, &size, key);
 
-  return base64_encode(result, &buffer, size);
+  return base64_encode(result, buffer, size);
 }
 
 /*
@@ -115,7 +101,9 @@ static size_t pkey_base64_encode(void* result, const pkey_t* key)
 
   pkey_encode(buffer, &size, key);
 
-  return base64_encode(result, &buffer, size);
+  printf("pkey size: %ld\n", size);
+
+  return base64_encode(result, buffer, size);
 }
 
 /*

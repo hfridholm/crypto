@@ -4,19 +4,20 @@
 typedef struct
 {
   size_t ns;
-  char   n[128];
+  char   n[ENCRYPT_SIZE];
   size_t es;
   char   e[1];
 } pkey_enc_t;
 
 /*
- *
+ * It is important to initialize the skey_enc_t to 0,
+ * otherwise the result would be written uninitialized values
  */
 int pkey_encode(void* result, size_t* size, const pkey_t* key)
 {
   if(!result || !size || !key) return 1;
 
-  pkey_enc_t key_enc;
+  pkey_enc_t key_enc = { 0 };
 
   mpz_export(key_enc.n, &key_enc.ns, 1, sizeof(char), 0, 0, key->n);
 
@@ -53,6 +54,9 @@ void pkey_free(pkey_t* key)
 int pkey_decode(pkey_t* key, const void* message, size_t size)
 {
   if(!key || !message) return 1;
+
+  printf("size: %ld\n", size);
+  printf("sizeof: %ld\n", sizeof(pkey_enc_t));
 
   if(size != sizeof(pkey_enc_t)) return 2;
 
