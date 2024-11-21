@@ -181,6 +181,8 @@ static void aes_block_decrypt(uint8_t result[16], const uint8_t input[16], const
 /*
  * Encrypt message using AES key of different sizes
  *
+ * Maybe: Add size_t* rsize argument for result size and rename size to msize
+ *
  * RETURN (int status)
  * - 0 | Success
  * - 1 | Failed to expand key

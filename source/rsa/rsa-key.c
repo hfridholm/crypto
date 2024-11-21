@@ -46,7 +46,7 @@ static int choose_d(mpz_t d, const mpz_t e, const mpz_t phi)
 
   mpz_gcd(tmp, e, phi);
 
-  gmp_printf("gcd(e, phi) = [%Zs]\n", tmp);
+  // gmp_printf("gcd(e, phi) = [%Zs]\n", tmp);
 
   mpz_clear(tmp);
 
@@ -152,7 +152,7 @@ static void key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz
     // 5. Choose d
     if(choose_d(d, e, phi) == 0) break;
 
-    printf("Failed to generate key values: %ld\n", count);
+    // printf("Failed to generate key values: %ld\n", count);
   }
 }
 
@@ -192,18 +192,7 @@ int keys_generate(skey_t* skey, pkey_t* pkey)
  */
 void keys_free(skey_t* skey, pkey_t* pkey)
 {
-  if(pkey)
-  {
-    mpz_clear(pkey->n);
-    mpz_clear(pkey->e);
-  }
+  if(pkey) pkey_free(pkey);
 
-  if(skey)
-  {
-    mpz_clear(skey->n);
-    mpz_clear(skey->e);
-    mpz_clear(skey->d);
-    mpz_clear(skey->p);
-    mpz_clear(skey->q);
-  }
+  if(skey) skey_free(skey);
 }

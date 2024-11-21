@@ -162,46 +162,6 @@ static void aes_key_generate(char buffer[32])
 }
 
 /*
- * This function encrypts the message with the supplied key,
- * and writes the output to the output file
- *
- * The result has to be divisable by 16, larger than size if needed
- *
- * (size + 15) & ~15
- *
- * This statement produces the next number divisable by 16
- */
-static void aes_encrypt_handler(const char* message, size_t size, const char* key)
-{
-  size_t result_size = (size + 15) & ~15;
-
-  char* result = malloc(sizeof(char) * result_size);
-  
-  aes_encrypt(result, message, size, key, AES_256);
-
-  file_write(result, result_size, args.args[1]);
-
-  free(result);
-}
-
-/*
- * This function decrypts the message with the supplied key,
- * and writes the output to the output file
- */
-static void aes_decrypt_handler(const char* message, size_t size, const char* key)
-{
-  if(!(size & ~15)) return;
-
-  char* result = malloc(sizeof(char) * size);
-  
-  aes_decrypt(result, message, size, key, AES_256);
-  
-  file_write(result, size, args.args[1]);
-
-  free(result);
-}
-
-/*
  *
  */
 static void encrypt_handler(const void* message, size_t size, pkey_t* pkey)

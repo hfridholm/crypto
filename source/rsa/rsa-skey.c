@@ -34,14 +34,6 @@ int skey_encode(void* result, size_t* size, const skey_t* key)
 
   mpz_export(key_enc.q, &key_enc.qs, 1, sizeof(char), 0, 0, key->q);
 
-  /*
-  printf("ns: %ld\n", key_enc.ns);
-  printf("es: %ld\n", key_enc.es);
-  printf("ds: %ld\n", key_enc.ds);
-  printf("ps: %ld\n", key_enc.ps);
-  printf("qs: %ld\n", key_enc.qs);
-  */
-
   memcpy(result, &key_enc, sizeof(skey_enc_t));
 
   *size = sizeof(skey_enc_t);

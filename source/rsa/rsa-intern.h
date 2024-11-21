@@ -7,4 +7,8 @@
 
 #define MESSAGE_SIZE ((MODULUS_SIZE / 8) - 11)
 
+extern void skey_free(skey_t* key);
+
+extern void pkey_free(pkey_t* key);
+
 #endif // RSA_INTERN_H
