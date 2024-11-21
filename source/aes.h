@@ -12,8 +12,8 @@ typedef enum
   AES_256 = 8
 } ksize_t;
 
-extern int aes_encrypt(void* result, const void* message, size_t size, const char* key, ksize_t ksize);
+extern int aes_encrypt(void* result, size_t* rsize, const void* message, size_t size, const char* key, ksize_t ksize);
 
-extern int aes_decrypt(void* result, const void* message, size_t size, const char* key, ksize_t ksize);
+extern int aes_decrypt(void* result, size_t* rsize, const void* message, size_t size, const char* key, ksize_t ksize);
 
 #endif // AES_H

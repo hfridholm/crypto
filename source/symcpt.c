@@ -94,7 +94,7 @@ static void aes_encrypt_handler(const char* message, size_t size, const char* ke
 
   char* result = malloc(sizeof(char) * result_size);
   
-  aes_encrypt(result, message, size, key, key_size);
+  aes_encrypt(result, NULL, message, size, key, key_size);
 
   file_write(result, result_size, args.args[1]);
 
@@ -111,7 +111,7 @@ static void aes_decrypt_handler(const char* message, size_t size, const char* ke
 
   char* result = malloc(sizeof(char) * size);
   
-  aes_decrypt(result, message, size, key, key_size);
+  aes_decrypt(result, NULL, message, size, key, key_size);
   
   file_write(result, size, args.args[1]);
 

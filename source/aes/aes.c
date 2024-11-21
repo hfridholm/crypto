@@ -187,7 +187,7 @@ static void aes_block_decrypt(uint8_t result[16], const uint8_t input[16], const
  * - 0 | Success
  * - 1 | Failed to expand key
  */
-int aes_encrypt(void* result, const void* message, size_t size, const char* key, ksize_t ksize)
+int aes_encrypt(void* result, size_t* rsize, const void* message, size_t size, const char* key, ksize_t ksize)
 {
   // 1. Expand the key
   uint8_t rounds = ROUND_KEYS(ksize);
@@ -219,6 +219,12 @@ int aes_encrypt(void* result, const void* message, size_t size, const char* key,
 
     aes_block_encrypt(result + index, block, (uint8_t*) rkeys, rounds);
   }
+  
+  // 4. Get the size of the result encryption
+  if(rsize)
+  {
+    *rsize = (size + 15) & ~15;
+  }
 
   return 0;
 }
@@ -230,7 +236,7 @@ int aes_encrypt(void* result, const void* message, size_t size, const char* key,
  * - 0 | Success
  * - 1 | Failed to expand key
  */
-int aes_decrypt(void* result, const void* message, size_t size, const char* key, ksize_t ksize)
+int aes_decrypt(void* result, size_t* rsize, const void* message, size_t size, const char* key, ksize_t ksize)
 {
   // 1. Expand the key
   uint8_t rounds = ROUND_KEYS(ksize);
@@ -261,6 +267,17 @@ int aes_decrypt(void* result, const void* message, size_t size, const char* key,
     memcpy(block, (uint8_t*) message + index, size - index);
 
     aes_block_encrypt(result + index, block, (uint8_t*) rkeys, rounds);
+  }
+
+  // 4. Get the size of the result, by trimming trailing bytes
+  if(rsize)
+  {
+    *rsize = size;
+
+    while(*rsize > 0 && ((uint8_t*)result)[*rsize - 1] == 0x00)
+    {
+      (*rsize)--;
+    }
   }
 
   return 0;

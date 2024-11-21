@@ -142,88 +142,92 @@ static void aes_key_generate(char buffer[32])
 }
 
 /*
+ * Asymetric encrypt the message
  *
+ * This function allocates rsize bytes memory to result
+ *
+ * RETURN (int status)
+ * - 0 | Success
+ * - 1 | Supplied arguments invalid
  */
-static void encrypt_handler(const void* message, size_t size, pkey_t* pkey)
+static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t size, pkey_t* pkey)
 {
-  // Get the password for the aes ecryption/decryption
+  if(!result || !message || !pkey) return 1;
+
+  // 1. Generate AES key
   char aes_key[32];
 
   aes_key_generate(aes_key);
 
-  printf("KEY: ");
-  for(int index = 0; index < 32; index++)
-  {
-    printf("%x", aes_key[index] & 0xFF);
-  }
-  printf("\n");
 
-  char encrypt[ENCRYPT_SIZE];
-  memset(encrypt, '\0', sizeof(encrypt));
+  // 2. Encrypt the AES key using RSA
+  char aes_key_enc[ENCRYPT_SIZE];
 
-  rsa_encrypt(encrypt, aes_key, 32, pkey);
-  
-  printf("RSA: ");
-  for(int index = 0; index < ENCRYPT_SIZE; index++)
-  {
-    printf("%x", encrypt[index] & 0xFF);
-  }
-  printf("\n");
+  size_t rsa_size;
 
-  size_t aes_encrypt_size = (size + 15) & ~15;
+  rsa_encrypt(aes_key_enc, &rsa_size, aes_key, 32, pkey);
 
 
-  char* buffer = malloc(sizeof(char) * (aes_encrypt_size + ENCRYPT_SIZE));
+  // 3. Encrypt the message using the AES key
+  size_t aes_message_size = (size + 15) & ~15;
 
-  // 1. First comes the RSA encrypted AES key
-  memcpy(buffer, encrypt, ENCRYPT_SIZE);
+  char* aes_message = malloc(sizeof(char) * aes_message_size);
 
-  // 2. Then comes the AES encrypted payload
-  aes_encrypt(buffer + ENCRYPT_SIZE, message, size, aes_key, AES_256);
+  aes_encrypt(aes_message, NULL, message, size, aes_key, AES_256);
 
-  file_write(buffer, aes_encrypt_size + ENCRYPT_SIZE, args.args[1]);
 
-  free(buffer);
+  // 4. Concatonate the different variables to a result
+  *rsize = (1 + rsa_size + aes_message_size);
+
+  *result = malloc(sizeof(char) * *rsize);
+
+  // 1. First comes the RSA encrypted size
+  *result[0] = (char) rsa_size;
+
+  // 2. Then comes the RSA encrypted AES key
+  memcpy(*result + 1, aes_key_enc, rsa_size);
+
+  // 3. Then comes the AES encrypted message
+  memcpy(*result + 1 + rsa_size, aes_message, aes_message_size);
+
+  free(aes_message);
+
+  return 0;
 }
 
 /*
+ * Decrypt the asymetric encrypted message
  *
+ * This function allocates rsize bytes memory to result
+ *
+ * RETURN (int status)
+ * - 0 | Success
+ * - 1 | Supplied arguments invalid
  */
-static void decrypt_handler(const void* message, size_t size, skey_t* skey)
+static int asm_decrypt(char** result, size_t* rsize, const void* message, size_t size, skey_t* skey)
 {
-  printf("ENCRYPT_SIZE: %d\n", ENCRYPT_SIZE);
-  printf("MESSAGE_SIZE: %d\n", MESSAGE_SIZE);
-  printf("size: %ld\n", size);
+  if(!result || !message || !skey) return 1;
 
-  printf("RSA: ");
-  for(int index = 0; index < ENCRYPT_SIZE; index++)
-  {
-    printf("%x", ((char*)message)[index] & 0xFF);
-  }
-  printf("\n");
+  // 1. Get the size of the RSA encryption
+  size_t rsa_size = (size_t) *((char*) message);
 
-  char aes_key[MESSAGE_SIZE];
+
+  // 2. Then comes the RSA encrypted AES key
+  char aes_key[ENCRYPT_SIZE]; // Eigentlich MESSAGE_SIZE
+
   memset(aes_key, '\0', sizeof(aes_key));
 
-  // 1. First comes the RSA encrypted AES key
-  rsa_decrypt(aes_key, message, ENCRYPT_SIZE, skey);
+  rsa_decrypt(aes_key, NULL, message + 1, rsa_size, skey);
 
-  printf("KEY: ");
-  for(int index = 0; index < MESSAGE_SIZE; index++)
-  {
-    printf("%x", aes_key[index] & 0xFF);
-  }
-  printf("\n");
 
-  char* result = malloc(sizeof(char) * (size - ENCRYPT_SIZE));
-  memset(result, '\0', (size - ENCRYPT_SIZE));
+  // 3. Then comes the AES encrypted message
+  size_t aes_message_size = (size - 1 - rsa_size);
 
-  // 2. Then comes the AES encrypted payload
-  aes_decrypt(result, message + ENCRYPT_SIZE, (size - ENCRYPT_SIZE), aes_key, AES_256);
+  *result = malloc(sizeof(char) * aes_message_size);
 
-  file_write(result, (size - ENCRYPT_SIZE), args.args[1]);
+  aes_decrypt(*result, rsize, message + 1 + rsa_size, aes_message_size, aes_key, AES_256);
 
-  free(result);
+  return 0;
 }
 
 static struct argp argp = { options, opt_parse, args_doc, doc };
@@ -270,13 +274,26 @@ int main(int argc, char* argv[])
     return 2;
   }
 
+  char* result;
+  size_t rsize;
+
   if(args.encrypt)
   {
-    encrypt_handler(message, size, &pkey);
+    if(asm_encrypt(&result, &rsize, message, size, &pkey) == 0)
+    {
+      file_write(result, rsize, args.args[1]);
+
+      free(result);
+    }
   }
   else
   {
-    decrypt_handler(message, size, &skey);
+    if(asm_decrypt(&result, &rsize, message, size, &skey) == 0)
+    {
+      file_write(result, rsize, args.args[1]);
+
+      free(result);
+    }
   }
 
   free(message);
