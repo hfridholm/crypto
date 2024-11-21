@@ -1,14 +1,14 @@
 /*
- * crypto - cryptography utillity
+ * symcpt - symetric cryptography utillity
  *
  * Written by Hampus Fridholm
  *
  * Last updated: 2024-11-15
  */
 
-#include "crypto.h"
+#include "symcpt.h"
 
-static char doc[] = "crypto - cryptography utillity";
+static char doc[] = "symcpt - symetric cryptography utillity";
 
 static char args_doc[] = "[INPUT] [OUTPUT]";
 
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
 
   if(size == 0)
   {
-    fprintf(stderr, "crypto: Inputted file has no data\n");
+    fprintf(stderr, "symcpt: Inputted file has no data\n");
 
     return 1;
   }
@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
 
   if(file_read(message, size, args.args[0]) == 0)
   {
-    fprintf(stderr, "crypto: Failed to read file\n");
+    fprintf(stderr, "symcpt: Failed to read file\n");
 
     return 2;
   }
@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
   // Check the status of the aes handler
   if(status == 0)
   {
-    fprintf(stderr, "crypto: Supplied cipher not supported\n");
+    fprintf(stderr, "symcpt: Supplied cipher not supported\n");
 
     return 3;
   }

@@ -1,34 +1,14 @@
 /*
- * Asymetric cryptition
+ * asmcpt - asymetric cryptography utillity
  *
  * Written by Hampus Fridholm
  *
- * Last updated: 2024-11-18
+ * Last updated: 2024-11-21
  */
 
-/*
- * -e file file.enc -p pkey
- *
- * -d file.enc file.dec -s skey
- */
+#include "asmcpt.h"
 
-#include "file.h"
-#include "rsa.h"
-#include "aes.h"
-
-#include <stdbool.h>
-#include <argp.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <stdlib.h>
-
-extern size_t base64_encode(void* result, const void* message, size_t size);
-
-extern size_t base64_decode(void* result, const void* message, size_t size);
-
-
-static char doc[] = "rsacpt - asymetric cryptography utillity";
+static char doc[] = "asmcpt - asymetric cryptography utillity";
 
 static char args_doc[] = "[INPUT] [OUTPUT]";
 
@@ -260,25 +240,13 @@ int main(int argc, char* argv[])
 
   pkey_handler(&pkey);
 
-  printf("pkey:\n");
-  gmp_printf("n: %Zd\n", pkey.n);
-  gmp_printf("e: %Zd\n", pkey.e);
-
-  printf("skey:\n");
-  gmp_printf("n: %Zd\n", skey.n);
-  gmp_printf("e: %Zd\n", skey.e);
-  gmp_printf("d: %Zd\n", skey.d);
-  gmp_printf("p: %Zd\n", skey.p);
-  gmp_printf("q: %Zd\n", skey.q);
-
-
   // Get the size of the inputted file
   // If the size is 0 (no data), the file is of no use
   size_t size = file_size_get(args.args[0]);
 
   if(size == 0)
   {
-    fprintf(stderr, "crypto: Inputted file has no data\n");
+    fprintf(stderr, "asmcpt: Inputted file has no data\n");
   
     keys_free(&skey, &pkey);
 
@@ -290,7 +258,7 @@ int main(int argc, char* argv[])
 
   if(file_read(message, size, args.args[0]) == 0)
   {
-    fprintf(stderr, "crypto: Failed to read file\n");
+    fprintf(stderr, "asmcpt: Failed to read file\n");
 
     keys_free(&skey, &pkey);
 

@@ -1,14 +1,14 @@
-.TH CRYPTO 1 2024-11-16 Linux
+.TH SYMCPT 1 2024-11-21 Linux
 
 .SH NAME
-crypto - cryptography utillity
+symcpt - symetric cryptography utillity
 
 .SH SYNOPSIS
-.B crypto
+.B symcpt
 [\fIOPTION\fR]... [\fIINPUT\fR] [\fIOUTPUT\fR]
 
 .SH DESCRIPTION
-crypto is a program designed to let the user encrypt and decrypt data using different cryptographic algorithms.
+symcpt is a utillity designed to let the user encrypt and decrypt data using different cryptographic algorithms.
 
 .SH OPTIONS
 .TP
