@@ -22,8 +22,8 @@ extern size_t base64_encode(void* result, const void* message, size_t size);
 extern size_t base64_decode(void* result, const void* message, size_t size);
 
 
-static char* SKEY_FILE = "skey";
-static char* PKEY_FILE = "pkey";
+#define SKEY_FILE "skey"
+#define PKEY_FILE "pkey"
 
 #define KEY_DIR "."
 
@@ -34,9 +34,9 @@ static char args_doc[] = "";
 
 static struct argp_option options[] =
 {
-  { "directory", 'd', "STRING", 0, "Key directory" },
-  { "bytes",     'b', "COUNT",  0, "Key modulus size" },
-  { "force",     'f', 0,        0, "Overwrite dir keys" },
+  { "dir",   'd', "STRING", 0, "Key directory" },
+  { "bytes", 'b', "COUNT",  0, "Key modulus size" },
+  { "force", 'f', 0,        0, "Overwrite dir keys" },
   { 0 }
 };
 
