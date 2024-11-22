@@ -282,7 +282,7 @@ int aes_decrypt(char** result, size_t* rsize, const void* message, size_t msize,
   {
     *rsize = msize;
 
-    while(*rsize > 0 && ((uint8_t*)result)[*rsize - 1] == 0x00)
+    while(*rsize > 0 && ((uint8_t*) *result)[*rsize - 1] == 0x00)
     {
       (*rsize)--;
     }
