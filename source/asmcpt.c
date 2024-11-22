@@ -183,7 +183,7 @@ static void aes_key_generate(char buffer[32])
  * - 0 | Success
  * - 1 | Supplied arguments invalid
  */
-static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t size, pkey_t* pkey)
+static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t msize, pkey_t* pkey)
 {
   if(!result || !message || !pkey) return 1;
 
@@ -201,17 +201,21 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
 
 
   // 3. Encrypt the message using the AES key
-  size_t aes_message_size = (size + 15) & ~15;
+  size_t aes_size;
+  char* aes_message;
 
-  char* aes_message = malloc(sizeof(char) * aes_message_size);
-
-  aes_encrypt(aes_message, NULL, message, size, aes_key, AES_256);
+  if(aes_encrypt(&aes_message, &aes_size, message, msize, aes_key, AES_256) != 0)
+  {
+    return 2;
+  }
 
 
   // 4. Concatonate the different variables to a result
-  *rsize = (1 + rsa_size + aes_message_size);
+  size_t result_size = (1 + rsa_size + aes_size);
 
-  *result = malloc(sizeof(char) * *rsize);
+  if(rsize) *rsize = result_size;
+
+  *result = malloc(sizeof(char) * result_size);
 
   // 1. First comes the RSA encrypted size
   *result[0] = (char) rsa_size;
@@ -220,7 +224,7 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
   memcpy(*result + 1, aes_key_enc, rsa_size);
 
   // 3. Then comes the AES encrypted message
-  memcpy(*result + 1 + rsa_size, aes_message, aes_message_size);
+  memcpy(*result + 1 + rsa_size, aes_message, aes_size);
 
   free(aes_message);
 
@@ -236,7 +240,7 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
  * - 0 | Success
  * - 1 | Supplied arguments invalid
  */
-static int asm_decrypt(char** result, size_t* rsize, const void* message, size_t size, skey_t* skey)
+static int asm_decrypt(char** result, size_t* rsize, const void* message, size_t msize, skey_t* skey)
 {
   if(!result || !message || !skey) return 1;
 
@@ -251,12 +255,14 @@ static int asm_decrypt(char** result, size_t* rsize, const void* message, size_t
 
   rsa_decrypt(aes_key, NULL, message + 1, rsa_size, skey);
 
+
   // 3. Then comes the AES encrypted message
-  size_t aes_message_size = (size - 1 - rsa_size);
+  size_t aes_size = (msize - 1 - rsa_size);
 
-  *result = malloc(sizeof(char) * aes_message_size);
-
-  aes_decrypt(*result, rsize, message + 1 + rsa_size, aes_message_size, aes_key, AES_256);
+  if(aes_decrypt(result, rsize, message + 1 + rsa_size, aes_size, aes_key, AES_256) != 0)
+  {
+    return 2;
+  }
 
   return 0;
 }

@@ -8,6 +8,8 @@
 
 #include "symcpt.h"
 
+#define DEFAULT_CIPHER "aes256"
+
 static char doc[] = "symcpt - symetric cryptography utillity";
 
 static char args_doc[] = "[INPUT] [OUTPUT]";
@@ -31,7 +33,7 @@ struct args
 
 struct args args =
 {
-  .cipher   = "aes256",
+  .cipher   = DEFAULT_CIPHER,
   .password = NULL,
   .encrypt  = true
 };
@@ -79,125 +81,112 @@ static error_t opt_parse(int key, char* arg, struct argp_state* state)
 }
 
 /*
- * This function encrypts the message with the supplied key,
- * and writes the output to the output file
- *
- * The result has to be divisable by 16, larger than size if needed
- *
- * (size + 15) & ~15
- *
- * This statement produces the next number divisable by 16
+ * Symetric encrypt a message
  */
-static void aes_encrypt_handler(const char* message, size_t size, const char* key, ksize_t key_size)
+static int sym_encrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
 {
-  size_t result_size = (size + 15) & ~15;
+  if(!result || !message || !password) return 1;
 
-  char* result = malloc(sizeof(char) * result_size);
+  // 1. Hash the password to get aes key
+  char hash[64];
+
+  sha256(hash, password, psize);
+
+
+  // 2. Concatonate the hash and the message to get payload
+  size_t payload_size = (64 + msize);
+
+  char* payload = malloc(sizeof(char) * payload_size);
+
+  memcpy(payload, hash, 64);
+
+  memcpy(payload + 64, message, msize);
+
+
+  // 3. Encrypt the payload using AES and hash as key
+  if(aes_encrypt(result, rsize, payload, payload_size, hash, key_size) != 0)
+  {
+    free(payload);
+
+    fprintf(stderr, "symcpt: Error: aes_encrypt\n");
+
+    return 2;
+  }
+
+  free(payload);
+
+  return 0;
+}
+
+/*
+ * Decrypted a symetric encrypted message
+ */
+static int sym_decrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
+{
+  if(!result || !message || !password) return 1;
+
+  // 1. Hash the password to get aes key
+  char hash[64];
+
+  sha256(hash, password, psize);
   
-  aes_encrypt(result, NULL, message, size, key, key_size);
+  // 2. Decrypt message to get payload
+  char* payload;
+  size_t payload_size;
 
-  file_write(result, result_size, args.args[1]);
+  if(aes_decrypt(&payload, &payload_size, message, msize, hash, key_size) != 0)
+  {
+    fprintf(stderr, "symcpt: Error: aes_decrypt\n");
 
-  free(result);
+    return 2;
+  }
+
+  // 3. Compare the encrypted hash, to validate
+  if(memcmp(payload, hash, 64) != 0)
+  {
+    fprintf(stderr, "symcpt: Invalid decryption\n");
+
+    free(payload);
+
+    return 3;
+  }
+
+  // 4. Allocate memory and store the result message
+  size_t result_size = (payload_size - 64);
+
+  if(rsize) *rsize = result_size;
+
+  *result = malloc(sizeof(char) * result_size);
+
+  memcpy(*result, payload + 64, result_size);
+
+  free(payload);
+
+  return 0;
 }
 
 /*
- * This function decrypts the message with the supplied key,
- * and writes the output to the output file
- */
-static void aes_decrypt_handler(const char* message, size_t size, const char* key, ksize_t key_size)
-{
-  if(!(size & ~15)) return;
-
-  char* result = malloc(sizeof(char) * size);
-  
-  aes_decrypt(result, NULL, message, size, key, key_size);
-  
-  file_write(result, size, args.args[1]);
-
-  free(result);
-}
-
-/*
- * This function either encrypts or decrypts the message,
- * using AES 128 with the supplied password
- */
-static void aes128_handler(const char* message, size_t size, const char* password)
-{
-  char key[16], hash[64];
-
-  sha256(hash, password, strlen(password));
-
-  memcpy(key, hash, sizeof(char) * 16);
-
-  if(args.encrypt) aes_encrypt_handler(message, size, key, AES_128);
-
-  else             aes_decrypt_handler(message, size, key, AES_128);
-}
-
-/*
- * This function either encrypts or decrypts the message,
- * using AES 192 with the supplied password
- */
-static void aes192_handler(const char* message, size_t size, const char* password)
-{
-  char key[24], hash[64];
-
-  sha256(hash, password, strlen(password));
-
-  memcpy(key, hash, sizeof(char) * 24);
-
-  if(args.encrypt) aes_encrypt_handler(message, size, key, AES_192);
-
-  else             aes_decrypt_handler(message, size, key, AES_192);
-}
-
-/*
- * This function either encrypts or decrypts the message,
- * using AES 256 with the supplied password
- */
-static void aes256_handler(const char* message, size_t size, const char* password)
-{
-  char key[32], hash[64];
-
-  sha256(hash, password, strlen(password));
-
-  memcpy(key, hash, sizeof(char) * 32);
-
-  if(args.encrypt) aes_encrypt_handler(message, size, key, AES_256);
-
-  else             aes_decrypt_handler(message, size, key, AES_256);
-}
-
-/*
- * This function either encrypts or decrypts the message,
- * using the supplied AES cipher with the supplied password
  *
- * RETURN (int status)
- * - 0       | Invalid cipher
- * - AES_256 | AES 256
- * - AES_192 | AES 192
- * - AES_128 | AES 128
  */
-static int aes_handler(const char* message, size_t size, const char* password)
+static int key_size_get(ksize_t* key_size)
 {
   if(strcmp(args.cipher, "aes256") == 0)
   {
-    aes256_handler(message, size, password);
+    *key_size = AES_256;
 
-    return AES_256;
+    return 1;
   }
   else if(strcmp(args.cipher, "aes192") == 0)
   {
-    aes192_handler(message, size, password);
+    *key_size = AES_192;
 
-    return AES_192;
+    return 2;
   }
   else if(strcmp(args.cipher, "aes128") == 0)
   {
-    aes128_handler(message, size, password);
+    *key_size = AES_128;
 
-    return AES_128;
+    return 3;
   }
   else return 0;
 }
@@ -219,6 +208,38 @@ static char* password_get(void)
   else
   {
     return getpass("Password: ");
+  }
+}
+
+/*
+ *
+ */
+static void encrypt_routine(const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
+{
+  char* result;
+  size_t rsize;
+
+  if(sym_encrypt(&result, &rsize, message, msize, password, psize, key_size) == 0)
+  {
+    file_write(result, rsize, args.args[1]);
+
+    free(result);
+  }
+}
+
+/*
+ *
+ */
+static void decrypt_routine(const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
+{
+  char* result;
+  size_t rsize;
+
+  if(sym_decrypt(&result, &rsize, message, msize, password, psize, key_size) == 0)
+  {
+    file_write(result, rsize, args.args[1]);
+
+    free(result);
   }
 }
 
@@ -259,19 +280,28 @@ int main(int argc, char* argv[])
   // Get the password for the aes ecryption/decryption
   char* password = password_get();
 
-  // Perform aes encryption/decryption
-  int status = aes_handler(message, size, password);
 
-  free(message);
-  free(password);
+  // Get the AES key size
+  ksize_t key_size;
 
-  // Check the status of the aes handler
-  if(status == 0)
+  if(key_size_get(&key_size) == 0)
   {
-    fprintf(stderr, "symcpt: Supplied cipher not supported\n");
+    fprintf(stderr, "symcpt: Cipher not supported\n");
 
     return 3;
   }
+
+  if(args.encrypt)
+  {
+    encrypt_routine(message, size, password, strlen(password), key_size);
+  }
+  else
+  {
+    decrypt_routine(message, size, password, strlen(password), key_size);
+  }
+
+  free(message);
+  free(password);
 
   return 0;
 }
