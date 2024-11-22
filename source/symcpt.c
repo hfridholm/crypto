@@ -145,6 +145,15 @@ static int sym_decrypt(char** result, size_t* rsize, const void* message, size_t
 {
   if(!result || !message || !password) return 1;
 
+  // Check if the message is large enough
+  if(msize < AES_SIZE(65))
+  {
+    if(!args.quiet)
+      fprintf(stderr, "symcpt: File is to small\n");
+
+    return 2;
+  }
+
   // 1. Hash the password to get aes key
   char hash[64];
 

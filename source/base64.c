@@ -3,13 +3,10 @@
  *
  * Written by Hampus Fridholm
  *
- * Last updated: 2024-11-17
+ * Last updated: 2024-11-22
  */
 
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "base64.h"
 
 static const char symbols[64] =
 {
@@ -55,12 +52,19 @@ static void symbols_encode(void* result, size_t r_index, uint8_t buffer[4], int 
 /*
  * Encode a message using base64
  *
- * RETURN (size_t size)
- * - The size of the result
+ * RETURN (int status)
  */
-size_t base64_encode(void* result, const void* message, size_t size)
+int base64_encode(char** result, size_t* rsize, const void* message, size_t msize)
 {
-  if(!result || !message) return 0;
+  if(!result || !message) return 1;
+
+  // 1. Allocate memory to result
+  size_t result_size = ((msize * 4 / 3) + 3) & ~3;
+
+  printf("size: %ld\n", msize);
+  printf("result_size: %ld\n", result_size);
+
+  *result = malloc(sizeof(char) * result_size);
 
   size_t m_index, r_index = 0;
 
@@ -68,34 +72,38 @@ size_t base64_encode(void* result, const void* message, size_t size)
   uint8_t buffer[4];
 
   // 1. Encode the main part of the message
-  for(m_index = 0; m_index + 3 <= size; m_index += 3)
+  for(m_index = 0; m_index + 3 <= msize; m_index += 3)
   {
     memcpy(tmp, message + m_index, 3);
 
     map_encode(buffer, tmp);
 
-    symbols_encode(result, r_index, buffer, 4);
+    symbols_encode(*result, r_index, buffer, 4);
 
     r_index += 4;
   }
 
   // 2. Encode the rest of the message
-  if(size > m_index)
+  if(msize > m_index)
   {
     memset(tmp, 0, 3);
 
-    memcpy(tmp, message, size - m_index);
+    memcpy(tmp, message, msize - m_index);
 
     map_encode(buffer, tmp);
 
-    size_t bytes = (size - m_index) + 1;
+    size_t bytes = (msize - m_index) + 1;
 
-    symbols_encode(result, r_index, buffer, bytes);
+    symbols_encode(*result, r_index, buffer, bytes);
 
     r_index += 4;
   }
 
-  return r_index;
+  if(rsize) *rsize = r_index;
+
+  printf("real size: %ld\n", r_index);
+
+  return 0;
 }
 
 /*
@@ -148,28 +156,40 @@ static int symbols_decode(uint8_t tmp[4], const void* message, size_t m_index)
 /*
  * Decode a base64 message
  *
- * RETURN (size_t size)
- * - The size of the result
+ * RETURN (int status)
  */
-size_t base64_decode(void* result, const void* message, size_t size)
+int base64_decode(char** result, size_t* rsize, const void* message, size_t msize)
 {
-  if(!result || !message) return 0;
+  if(!result || !message) return 1;
+
+  // 1. Allocate memory to result
+  size_t result_size = (msize * 3 / 4);
+
+  printf("size: %ld\n", msize);
+  printf("result_size: %ld\n", result_size);
+
+  *result = malloc(sizeof(char) * result_size);
+
 
   size_t m_index, r_index = 0;
 
   uint8_t tmp[4];
   uint8_t buffer[3];
 
-  for(m_index = 0; m_index + 4 <= size; m_index += 4)
+  for(m_index = 0; m_index + 4 <= msize; m_index += 4)
   {
     int bytes = symbols_decode(tmp, message, m_index);
 
     map_decode(buffer, tmp);
 
-    memcpy(result + r_index, buffer, bytes - 1);
+    memcpy(*result + r_index, buffer, bytes - 1);
 
     r_index += bytes - 1;
   }
 
-  return r_index;
+  if(rsize) *rsize = r_index;
+
+  printf("real size: %ld\n", r_index);
+
+  return 0;
 }

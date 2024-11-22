@@ -18,11 +18,14 @@ typedef struct
 /*
  * It is important to initialize the skey_enc_t to 0,
  * otherwise the result would be written uninitialized values
+ *
+ * The function allocates memory to result, that has to be freed
  */
-int skey_encode(void* result, size_t* size, const skey_t* key)
+int skey_encode(char** result, size_t* size, const skey_t* key)
 {
   if(!result || !size || !key) return 1;
 
+  // 1. Serialize the secret key cryptography values
   skey_enc_t key_enc = { 0 };
 
   mpz_export(key_enc.n, &key_enc.ns, 1, sizeof(char), 0, 0, key->n);
@@ -35,9 +38,15 @@ int skey_encode(void* result, size_t* size, const skey_t* key)
 
   mpz_export(key_enc.q, &key_enc.qs, 1, sizeof(char), 0, 0, key->q);
 
-  memcpy(result, &key_enc, sizeof(skey_enc_t));
 
-  *size = sizeof(skey_enc_t);
+  // 2. Allocate and populate memory of result
+  size_t result_size = sizeof(skey_enc_t);
+
+  if(size) *size = result_size;
+
+  *result = malloc(sizeof(char) * result_size);
+
+  memcpy(*result, &key_enc, sizeof(skey_enc_t));
 
   return 0;
 }

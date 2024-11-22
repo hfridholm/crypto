@@ -96,31 +96,51 @@ static error_t opt_parse(int key, char* arg, struct argp_state* state)
 /*
  *
  */
-static size_t skey_base64_encode(void* result, const skey_t* key)
+static int skey_base64_encode(char** result, size_t* size, const skey_t* key)
 {
-  char buffer[10000];
-  memset(buffer, '\0', sizeof(buffer));
+  char* buffer;
+  size_t buffer_size;
 
-  size_t size = 0;
+  if(skey_encode(&buffer, &buffer_size, key) != 0)
+  {
+    return 1;
+  }
 
-  skey_encode(buffer, &size, key);
+  if(base64_encode(result, size, buffer, buffer_size) != 0)
+  {
+    free(buffer);
 
-  return base64_encode(result, buffer, size);
+    return 2;
+  }
+
+  free(buffer);
+
+  return 0;
 }
 
 /*
  *
  */
-static size_t pkey_base64_encode(void* result, const pkey_t* key)
+static int pkey_base64_encode(char** result, size_t* size, const pkey_t* key)
 {
-  char buffer[10000];
-  memset(buffer, '\0', sizeof(buffer));
+  char* buffer;
+  size_t buffer_size;
 
-  size_t size = 0;
+  if(pkey_encode(&buffer, &buffer_size, key) != 0)
+  {
+    return 1;
+  }
 
-  pkey_encode(buffer, &size, key);
+  if(base64_encode(result, size, buffer, buffer_size) != 0)
+  {
+    free(buffer);
 
-  return base64_encode(result, buffer, size);
+    return 2;
+  }
+
+  free(buffer);
+
+  return 0;
 }
 
 /*
@@ -128,18 +148,22 @@ static size_t pkey_base64_encode(void* result, const pkey_t* key)
  */
 static int pkey_handler(pkey_t* key)
 {
-  char buffer[10000];
-  memset(buffer, '\0', sizeof(buffer));
+  char*  base64;
+  size_t size;
 
-  size_t size = pkey_base64_encode(buffer, key);
-
-  if(args.force || dir_file_size_get(args.dir, PKEY_FILE) == 0)
+  if(pkey_base64_encode(&base64, &size, key) != 0)
   {
-    dir_file_write(buffer, size, args.dir, PKEY_FILE);
-
-    return 0;
+    return 1;
   }
-  else return 1;
+
+  if(dir_file_size_get(args.dir, PKEY_FILE) > 0 && !args.force)
+  {
+    return 2;
+  }
+
+  dir_file_write(base64, size, args.dir, PKEY_FILE);
+
+  return 0;
 }
 
 /*
@@ -147,18 +171,22 @@ static int pkey_handler(pkey_t* key)
  */
 static int skey_handler(skey_t* key)
 {
-  char buffer[10000];
-  memset(buffer, '\0', sizeof(buffer));
+  char*  base64;
+  size_t size;
 
-  size_t size = skey_base64_encode(buffer, key);
-
-  if(args.force || dir_file_size_get(args.dir, SKEY_FILE) == 0)
+  if(skey_base64_encode(&base64, &size, key) != 0)
   {
-    dir_file_write(buffer, size, args.dir, SKEY_FILE);
-
-    return 0;
+    return 1;
   }
-  else return 1;
+
+  if(dir_file_size_get(args.dir, SKEY_FILE) > 0 && !args.force)
+  {
+    return 2;
+  }
+
+  dir_file_write(base64, size, args.dir, SKEY_FILE);
+
+  return 0;
 }
 
 static struct argp argp = { options, opt_parse, args_doc, doc };

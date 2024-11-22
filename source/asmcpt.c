@@ -114,11 +114,24 @@ static error_t opt_parse(int key, char* arg, struct argp_state* state)
  */
 static int base64_skey_decode(skey_t* key, const void* message, size_t size)
 {
-  char buffer[size];
+  char*  buffer;
+  size_t buffer_size;
 
-  size_t buffer_size = base64_decode(buffer, message, size);
+  if(base64_decode(&buffer, &buffer_size, message, size) != 0)
+  {
+    return 1;
+  }
 
-  return skey_decode(key, buffer, buffer_size);
+  if(skey_decode(key, buffer, buffer_size) != 0)
+  {
+    free(buffer);
+
+    return 2;
+  }
+
+  free(buffer);
+
+  return 0;
 }
 
 /*
@@ -126,11 +139,24 @@ static int base64_skey_decode(skey_t* key, const void* message, size_t size)
  */
 static int base64_pkey_decode(pkey_t* key, const void* message, size_t size)
 {
-  char buffer[size];
+  char*  buffer;
+  size_t buffer_size;
 
-  size_t buffer_size = base64_decode(buffer, message, size);
+  if(base64_decode(&buffer, &buffer_size, message, size) != 0)
+  {
+    return 1;
+  }
 
-  return pkey_decode(key, buffer, buffer_size);
+  if(pkey_decode(key, buffer, buffer_size) != 0)
+  {
+    free(buffer);
+
+    return 2;
+  }
+
+  free(buffer);
+
+  return 0;
 }
 
 /*
@@ -263,6 +289,15 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
 static int asm_decrypt(char** result, size_t* rsize, const void* message, size_t msize, skey_t* skey)
 {
   if(!result || !message || !skey) return 1;
+
+  // Check if the message is large enough
+  if(msize < (1 + ENCRYPT_SIZE + AES_SIZE(1)))
+  {
+    if(!args.quiet)
+      fprintf(stderr, "asmcpt: File is to small\n");
+
+    return 2;
+  }
 
   // 1. Get the size of the RSA encryption
   size_t rsa_size = (size_t) *((char*) message);

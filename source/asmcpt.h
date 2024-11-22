@@ -13,6 +13,7 @@
 #include "rsa.h"
 #include "aes.h"
 #include "debug.h"
+#include "base64.h"
 
 #include <stdbool.h>
 #include <argp.h>
@@ -20,9 +21,5 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-
-extern size_t base64_encode(void* result, const void* message, size_t size);
-
-extern size_t base64_decode(void* result, const void* message, size_t size);
 
 #endif // ASMCPT_H
