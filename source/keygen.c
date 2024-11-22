@@ -20,9 +20,12 @@ static char args_doc[] = "";
 
 static struct argp_option options[] =
 {
-  { "dir",   'd', "STRING", 0, "Key directory" },
-  { "bytes", 'b', "COUNT",  0, "Key modulus size" },
-  { "force", 'f', 0,        0, "Overwrite dir keys" },
+  { "dir",    'd', "DIR",   0, "Key directory" },
+  { "bytes",  'b', "COUNT", 0, "Key modulus size" },
+  { "force",  'f', 0,       0, "Overwrite dir keys" },
+  { "quiet",  'q', 0,       0, "Don't produce any output" },
+  { "silent", 's', 0,       OPTION_ALIAS },
+  { "debug",  'x', 0,       0, "Output debug messages" },
   { 0 }
 };
 
@@ -31,13 +34,17 @@ struct args
   char*  dir;
   size_t bytes;
   bool   force;
+  bool   quiet;
+  bool   debug;
 };
 
 struct args args =
 {
   .dir   = KEY_DIR,
   .bytes = 0,
-  .force = false
+  .force = false,
+  .quiet = false,
+  .debug = false
 };
 
 /*
@@ -59,6 +66,18 @@ static error_t opt_parse(int key, char* arg, struct argp_state* state)
 
     case 'f':
       args->force = true;
+      break;
+
+    case 'q': case 's':
+      if(args->debug) argp_usage(state);
+
+      args->quiet = true;
+      break;
+
+    case 'x':
+      if(args->quiet) argp_usage(state);
+
+      args->debug = true;
       break;
 
     case ARGP_KEY_ARG:
@@ -154,6 +173,9 @@ int main(int argc, char* argv[])
 
   srand(time(NULL));
 
+  if(args.debug)
+    info_print("Start of main");
+
   skey_t skey;
   pkey_t pkey;
 
@@ -162,15 +184,20 @@ int main(int argc, char* argv[])
 
   if(pkey_handler(&pkey) != 0)
   {
-    printf("keygen : Failed to write public key\n");
+    if(!args.quiet)
+      fprintf(stderr, "keygen : Failed to write public key\n");
   }
 
   if(skey_handler(&skey) != 0)
   {
-    printf("keygen : Failed to write secret key\n");
+    if(!args.quiet)
+      fprintf(stderr, "keygen : Failed to write secret key\n");
   }
 
   keys_free(&skey, &pkey);
+
+  if(args.debug)
+    info_print("End of main");
 
   return 0;
 }

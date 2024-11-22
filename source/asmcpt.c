@@ -20,11 +20,13 @@ static char args_doc[] = "[INPUT] [OUTPUT]";
 
 static struct argp_option options[] =
 {
-  { "secret",   's', "STRING", 0, "Secret key file" },
-  { "public",   'p', "STRING", 0, "Public key file" },
-  { "dir",      'D', "STRING", 0, "Key directory" },
-  { "encrypt",  'e', 0,        0, "Encrypt file" },
-  { "decrypt",  'd', 0,        0, "Decrypt file" },
+  { "secret",  's', "FILE", 0, "Secret key file" },
+  { "public",  'p', "FILE", 0, "Public key file" },
+  { "dir",     'D', "DIR",  0, "Key directory" },
+  { "encrypt", 'e', 0,      0, "Encrypt file" },
+  { "decrypt", 'd', 0,      0, "Decrypt file" },
+  { "quiet",   'q', 0,      0, "Don't produce any output" },
+  { "debug",   'x', 0,      0, "Output debug messages" },
   { 0 }
 };
 
@@ -35,6 +37,8 @@ struct args
   char* public;
   char* dir;
   bool  encrypt;
+  bool  quiet;
+  bool  debug;
 };
 
 struct args args =
@@ -42,7 +46,9 @@ struct args args =
   .secret  = SKEY_FILE,
   .public  = PKEY_FILE,
   .dir     = KEY_DIR,
-  .encrypt = true
+  .encrypt = true,
+  .quiet   = false,
+  .debug   = false
 };
 
 /*
@@ -72,6 +78,18 @@ static error_t opt_parse(int key, char* arg, struct argp_state* state)
 
     case 'D':
       args->dir = arg;
+      break;
+
+    case 'q':
+      if(args->debug) argp_usage(state);
+
+      args->quiet = true;
+      break;
+
+    case 'x':
+      if(args->quiet) argp_usage(state);
+
+      args->debug = true;
       break;
 
     case ARGP_KEY_ARG:
@@ -126,14 +144,16 @@ static int pkey_get(pkey_t* key)
 
   if(dir_file_read(base64, file_size, args.dir, args.public) == 0)
   {
-    fprintf(stderr, "asmcpt: Failed to read file\n");
+    if(!args.quiet)
+      fprintf(stderr, "asmcpt: Failed to read file\n");
 
     return 1;
   }
 
   if(base64_pkey_decode(key, base64, file_size) != 0)
   {
-    fprintf(stderr, "asmcpt: Failed to decode base64\n");
+    if(!args.quiet)
+      fprintf(stderr, "asmcpt: Failed to decode base64\n");
 
     return 2;
   }
@@ -276,7 +296,9 @@ static void encrypt_routine(const void* message, size_t size)
 
   if(pkey_get(&pkey) != 0)
   {
-    printf("asmcpt: Failed to get public key\n");
+    if(!args.quiet)
+      fprintf(stderr, "asmcpt: Failed to get public key\n");
+
     return;
   }
 
@@ -302,7 +324,9 @@ static void decrypt_routine(const void* message, size_t size)
 
   if(skey_get(&skey) != 0)
   {
-    printf("asmcpt: Failed to get secret key\n");
+    if(!args.quiet)
+      fprintf(stderr, "asmcpt: Failed to get secret key\n");
+
     return;
   }
 
@@ -331,6 +355,9 @@ int main(int argc, char* argv[])
 
   srand(time(NULL));
 
+  if(args.debug)
+    info_print("Start of main");
+
   /*
   printf("skey: %s/%s\n", args.dir, args.secret);
   printf("pkey: %s/%s\n", args.dir, args.public);
@@ -342,7 +369,8 @@ int main(int argc, char* argv[])
 
   if(size == 0)
   {
-    fprintf(stderr, "asmcpt: Inputted file has no data\n");
+    if(!args.quiet)
+      fprintf(stderr, "asmcpt: Inputted file has no data\n");
   
     return 1;
   }
@@ -352,7 +380,8 @@ int main(int argc, char* argv[])
 
   if(file_read(message, size, args.args[0]) == 0)
   {
-    fprintf(stderr, "asmcpt: Failed to read file\n");
+    if(!args.quiet)
+      fprintf(stderr, "asmcpt: Failed to read file\n");
 
     return 2;
   }
@@ -367,6 +396,9 @@ int main(int argc, char* argv[])
   }
 
   free(message);
+
+  if(args.debug)
+    info_print("End of main");
 
   return 0;
 }

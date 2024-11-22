@@ -12,6 +12,7 @@
 #include "file.h"
 #include "rsa.h"
 #include "aes.h"
+#include "debug.h"
 
 #include <stdbool.h>
 #include <argp.h>

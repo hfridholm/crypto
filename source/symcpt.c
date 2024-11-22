@@ -20,6 +20,9 @@ static struct argp_option options[] =
   { "password", 'p', "STRING", 0, "Encryption password" },
   { "encrypt",  'e', 0,        0, "Encrypt file" },
   { "decrypt",  'd', 0,        0, "Decrypt file" },
+  { "quiet",    'q', 0,        0, "Don't produce any output" },
+  { "silent",   's', 0,        OPTION_ALIAS },
+  { "debug",    'x', 0,        0, "Output debug messages" },
   { 0 }
 };
 
@@ -29,13 +32,17 @@ struct args
   char* cipher;
   char* password;
   bool  encrypt;
+  bool  quiet;
+  bool  debug;
 };
 
 struct args args =
 {
   .cipher   = DEFAULT_CIPHER,
   .password = NULL,
-  .encrypt  = true
+  .encrypt  = true,
+  .quiet    = false,
+  .debug    = false
 };
 
 /*
@@ -61,6 +68,18 @@ static error_t opt_parse(int key, char* arg, struct argp_state* state)
 
     case 'e':
       args->encrypt = true;
+      break;
+
+    case 'q': case 's':
+      if(args->debug) argp_usage(state);
+
+      args->quiet = true;
+      break;
+
+    case 'x':
+      if(args->quiet) argp_usage(state);
+
+      args->debug = true;
       break;
 
     case ARGP_KEY_ARG:
@@ -108,7 +127,8 @@ static int sym_encrypt(char** result, size_t* rsize, const void* message, size_t
   {
     free(payload);
 
-    fprintf(stderr, "symcpt: Error: aes_encrypt\n");
+    if(!args.quiet)
+      fprintf(stderr, "symcpt: Error: aes_encrypt\n");
 
     return 2;
   }
@@ -136,7 +156,8 @@ static int sym_decrypt(char** result, size_t* rsize, const void* message, size_t
 
   if(aes_decrypt(&payload, &payload_size, message, msize, hash, key_size) != 0)
   {
-    fprintf(stderr, "symcpt: Error: aes_decrypt\n");
+    if(!args.quiet)
+      fprintf(stderr, "symcpt: Error: aes_decrypt\n");
 
     return 2;
   }
@@ -144,7 +165,8 @@ static int sym_decrypt(char** result, size_t* rsize, const void* message, size_t
   // 3. Compare the encrypted hash, to validate
   if(memcmp(payload, hash, 64) != 0)
   {
-    fprintf(stderr, "symcpt: Invalid decryption\n");
+    if(!args.quiet)
+      fprintf(stderr, "symcpt: Invalid decryption\n");
 
     free(payload);
 
@@ -256,13 +278,17 @@ int main(int argc, char* argv[])
 {
   argp_parse(&argp, argc, argv, 0, 0, &args);
 
+  if(args.debug)
+    info_print("Start of main");
+
   // Get the size of the inputted file
   // If the size is 0 (no data), the file is of no use
   size_t size = file_size_get(args.args[0]);
 
   if(size == 0)
   {
-    fprintf(stderr, "symcpt: Inputted file has no data\n");
+    if(!args.quiet)
+      fprintf(stderr, "symcpt: Inputted file has no data\n");
 
     return 1;
   }
@@ -272,7 +298,8 @@ int main(int argc, char* argv[])
 
   if(file_read(message, size, args.args[0]) == 0)
   {
-    fprintf(stderr, "symcpt: Failed to read file\n");
+    if(!args.quiet)
+      fprintf(stderr, "symcpt: Failed to read file\n");
 
     return 2;
   }
@@ -286,7 +313,8 @@ int main(int argc, char* argv[])
 
   if(key_size_get(&key_size) == 0)
   {
-    fprintf(stderr, "symcpt: Cipher not supported\n");
+    if(!args.quiet)
+      fprintf(stderr, "symcpt: Cipher not supported\n");
 
     return 3;
   }
@@ -302,6 +330,9 @@ int main(int argc, char* argv[])
 
   free(message);
   free(password);
+
+  if(args.debug)
+    info_print("End of main");
 
   return 0;
 }

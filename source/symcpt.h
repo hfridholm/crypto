@@ -11,6 +11,7 @@
 
 #include "aes.h"
 #include "file.h"
+#include "debug.h"
 
 extern char* sha256(char hash[64], const void* message, size_t size);
 
