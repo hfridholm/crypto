@@ -88,8 +88,9 @@ size_t base64_encode(void* result, const void* message, size_t size)
 
     map_encode(buffer, tmp);
 
-    // Probably: Change argument bytes (1+) ?
-    symbols_encode(result, r_index, buffer, size - m_index);
+    size_t bytes = (size - m_index) + 1;
+
+    symbols_encode(result, r_index, buffer, bytes);
 
     r_index += 4;
   }
@@ -130,16 +131,18 @@ static void map_decode(uint8_t buffer[3], uint8_t tmp[4])
  */
 static int symbols_decode(uint8_t tmp[4], const void* message, size_t m_index)
 {
-  for(int index = 0; index < 4; index++)
+  int bytes;
+
+  for(bytes = 0; bytes < 4; bytes++)
   {
-    char symbol = ((char*) message)[m_index + index];
+    char symbol = ((char*) message)[m_index + bytes];
 
-    if(symbol == '=') return index;
+    if(symbol == '=') return bytes;
 
-    tmp[index] = symbol_index_get(symbol);
+    tmp[bytes] = symbol_index_get(symbol);
   }
 
-  return 4;
+  return bytes;
 }
 
 /*
@@ -163,12 +166,9 @@ size_t base64_decode(void* result, const void* message, size_t size)
 
     map_decode(buffer, tmp);
 
-    // Either copy 3, or 2 bytes
-    int r_incr = (bytes > 2) ? 3 : 2;
+    memcpy(result + r_index, buffer, bytes - 1);
 
-    memcpy(result + r_index, buffer, r_incr);
-
-    r_index += r_incr;
+    r_index += bytes - 1;
   }
 
   return r_index;

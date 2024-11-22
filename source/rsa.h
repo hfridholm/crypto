@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MODULUS_SIZE 1024
+#define MODULUS_SIZE 512
 
 #define ENCRYPT_SIZE (MODULUS_SIZE / 8)
 

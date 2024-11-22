@@ -101,8 +101,6 @@ static size_t pkey_base64_encode(void* result, const pkey_t* key)
 
   pkey_encode(buffer, &size, key);
 
-  printf("pkey size: %ld\n", size);
-
   return base64_encode(result, buffer, size);
 }
 

@@ -55,9 +55,6 @@ int pkey_decode(pkey_t* key, const void* message, size_t size)
 {
   if(!key || !message) return 1;
 
-  printf("size: %ld\n", size);
-  printf("sizeof: %ld\n", sizeof(pkey_enc_t));
-
   if(size != sizeof(pkey_enc_t)) return 2;
 
   pkey_enc_t key_enc = { 0 };

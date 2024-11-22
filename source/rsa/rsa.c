@@ -16,10 +16,12 @@ int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, p
 
   mpz_powm(r, m, key->e, key->n);
 
+  /*
   gmp_printf("m: %Zd\n", m);
+  gmp_printf("d: %ld\n", mpz_sizeinbase(key->e, 2));
+  gmp_printf("n: %ld\n", mpz_sizeinbase(key->n, 2));
   gmp_printf("r: %Zd\n", r);
-  gmp_printf("e: %Zd\n", key->e);
-  gmp_printf("n: %Zd\n", key->n);
+  */
 
   mpz_export(result, rsize, 1, sizeof(char), 0, 0, r);
 
@@ -43,10 +45,12 @@ int rsa_decrypt(void* result, size_t* rsize, const void* message, size_t size, s
 
   mpz_powm(r, m, key->d, key->n);
 
+  /*
   gmp_printf("m: %Zd\n", m);
+  gmp_printf("d: %ld\n", mpz_sizeinbase(key->d, 2));
+  gmp_printf("n: %ld\n", mpz_sizeinbase(key->n, 2));
   gmp_printf("r: %Zd\n", r);
-  gmp_printf("d: %Zd\n", key->d);
-  gmp_printf("n: %Zd\n", key->n);
+  */
 
   mpz_export(result, rsize, 1, sizeof(char), 0, 0, r);
 

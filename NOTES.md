@@ -3,6 +3,7 @@
 
 ## Must
 - keygen generates keys that always work with each other!
+  (it seams like keys 1024-bit and over have this problem)
 
 ## Maybe
 - Encrypt AES key in header of encrypted file
