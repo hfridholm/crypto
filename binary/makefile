@@ -1,7 +1,7 @@
 #
 # Written by Hampus Fridholm
 #
-# Last updated: 2024-08-31
+# Last updated: 2024-11-21
 #
 
 # These are the names of the targets
@@ -28,22 +28,28 @@ AES_SOURCE_FILES := $(wildcard $(AES_DIR)/*.c)
 RSA_DIR := $(SOURCE_DIR)/rsa
 RSA_SOURCE_FILES := $(wildcard $(RSA_DIR)/*.c)
 
-CRYPTO_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/sha256.c
-CRYPTO_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(CRYPTO_SOURCE_FILES:.c=.o)))
+SYMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/debug.c $(SOURCE_DIR)/sha256.c
+SYMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(SYMCPT_SOURCE_FILES:.c=.o)))
 
-KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c
+KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/base64.c $(SOURCE_DIR)/debug.c
 KEYGEN_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(KEYGEN_SOURCE_FILES:.c=.o)))
 
+ASMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/base64.c $(SOURCE_DIR)/debug.c
+ASMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(ASMCPT_SOURCE_FILES:.c=.o)))
+
 # These are the executable programs that you can create
-PROGRAMS := crypto keygen
+PROGRAMS := symcpt keygen asmcpt
 
 all: $(PROGRAMS)
 
-crypto: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(CRYPTO_OBJECT_FILES) $(CRYPTO_SOURCE_FILES)
-	$(COMPILER) $(OBJECT_DIR)/$@.o $(CRYPTO_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
+symcpt: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(SYMCPT_OBJECT_FILES) $(SYMCPT_SOURCE_FILES)
+	$(COMPILER) $(OBJECT_DIR)/$@.o $(SYMCPT_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
 
 keygen: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(KEYGEN_OBJECT_FILES) $(KEYGEN_SOURCE_FILES)
 	$(COMPILER) $(OBJECT_DIR)/$@.o $(KEYGEN_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
+
+asmcpt: %: $(OBJECT_DIR)/%.o $(SOURCE_DIR)/%.c $(ASMCPT_OBJECT_FILES) $(ASMCPT_SOURCE_FILES)
+	$(COMPILER) $(OBJECT_DIR)/$@.o $(ASMCPT_OBJECT_FILES) $(LINKER_FLAGS) -o $(BINARY_DIR)/$@
 
 # These are rules for compiling object files out of source files
 $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/*/%.c 

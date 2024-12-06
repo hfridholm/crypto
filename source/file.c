@@ -1,7 +1,9 @@
 /*
+ * file.c
+ *
  * Written by Hampus Fridholm
  *
- * Last updated: 2024-08-31
+ * Last updated: 2024-11-21
  */
 
 #include "file.h"
@@ -91,4 +93,46 @@ size_t file_read(void* pointer, size_t size, const char* filepath)
   fclose(stream);
 
   return status;
+}
+
+/*
+ *
+ */
+size_t dir_file_read(void* pointer, size_t size, const char* dirpath, const char* name)
+{
+  size_t path_size = strlen(dirpath) + 1 + strlen(name);
+
+  char filepath[path_size + 1];
+
+  sprintf(filepath, "%s/%s", dirpath, name);
+
+  return file_read(pointer, size, filepath);
+}
+
+/*
+ *
+ */
+size_t dir_file_write(const void* pointer, size_t size, const char* dirpath, const char* name)
+{
+  size_t path_size = strlen(dirpath) + 1 + strlen(name);
+
+  char filepath[path_size + 1];
+
+  sprintf(filepath, "%s/%s", dirpath, name);
+
+  return file_write(pointer, size, filepath);
+}
+
+/*
+ *
+ */
+size_t dir_file_size_get(const char* dirpath, const char* name)
+{
+  size_t path_size = strlen(dirpath) + 1 + strlen(name);
+
+  char filepath[path_size + 1];
+
+  sprintf(filepath, "%s/%s", dirpath, name);
+
+  return file_size_get(filepath);
 }

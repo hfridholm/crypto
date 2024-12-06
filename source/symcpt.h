@@ -1,5 +1,5 @@
-#ifndef CRYPTO_H
-#define CRYPTO_H
+#ifndef SYMCPT_H
+#define SYMCPT_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,8 @@
 
 #include "aes.h"
 #include "file.h"
+#include "debug.h"
 
 extern char* sha256(char hash[64], const void* message, size_t size);
 
-#endif // CRYPTO_H
+#endif // SYMCPT_H

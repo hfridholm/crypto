@@ -1,14 +1,14 @@
-.TH CRYPTO 1 2024-08-31 Linux
+.TH SYMCPT 1 2024-11-21 Linux
 
 .SH NAME
-crypto - cryptography utillity
+symcpt - symetric cryptography utillity
 
 .SH SYNOPSIS
-.B crypto
+.B symcpt
 [\fIOPTION\fR]... [\fIINPUT\fR] [\fIOUTPUT\fR]
 
 .SH DESCRIPTION
-crypto is a program designed to let the user encrypt and decrypt data using different cryptographic algorithms.
+symcpt is a utillity designed to let the user encrypt and decrypt data using different cryptographic algorithms.
 
 .SH OPTIONS
 .TP
@@ -24,10 +24,6 @@ decrypt
 Input a password as a string with this flag, to either encrypt or decrypt a message.
 
 .TP
-.BR \-f " <passfile>"
-Input a file containing the password to either encrypt or decrypt a message.
-
-.TP
 .BR \-c " <cipher>"
 Choose which cipher to encrypt or decrypt. See all supported ciphers under the \fBCIPHERS\fR header.
 
@@ -40,9 +36,6 @@ Choose which cipher to encrypt or decrypt. See all supported ciphers under the \
 
 .TP
 .BR aes256
-
-.TP
-.BR rsa
 
 .SH AUTHOR
 Written by Hampus Fridholm.

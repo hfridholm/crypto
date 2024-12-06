@@ -30,12 +30,12 @@
  * 4 words for AES-128, 6 words for AES-192, 8 words for AES-256
  *
  * RETURN (int status)
- * - 0 | Success!
+ * - 0 | Success
  * - 1 | Invalid key length
  */
 int key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
 {
-  if(ksize != 4 && ksize != 6 && ksize != 8) return 1;
+  if(ksize != AES_128 && ksize != AES_192 && ksize != AES_256) return 1;
 
   uint8_t rounds = ROUND_KEYS(ksize);
 
@@ -58,5 +58,5 @@ int key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
       rkeys[index] = rkeys[index - ksize] ^ rkeys[index - 1];
     }
   }
-  return 0; // Success!
+  return 0;
 }
