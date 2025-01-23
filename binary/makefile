@@ -31,10 +31,10 @@ RSA_SOURCE_FILES := $(wildcard $(RSA_DIR)/*.c)
 SYMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/debug.c $(SOURCE_DIR)/sha256.c
 SYMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(SYMCPT_SOURCE_FILES:.c=.o)))
 
-KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/base64.c $(SOURCE_DIR)/debug.c
+KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/debug.c
 KEYGEN_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(KEYGEN_SOURCE_FILES:.c=.o)))
 
-ASMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/base64.c $(SOURCE_DIR)/debug.c
+ASMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/debug.c
 ASMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(ASMCPT_SOURCE_FILES:.c=.o)))
 
 # These are the executable programs that you can create

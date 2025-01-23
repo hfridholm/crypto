@@ -13,7 +13,6 @@
 #include "rsa.h"
 #include "aes.h"
 #include "debug.h"
-#include "base64.h"
 
 #include <stdio.h>
 #include <string.h>

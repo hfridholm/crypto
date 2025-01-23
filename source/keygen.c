@@ -6,6 +6,9 @@
  * Last updated: 2024-11-21
  */
 
+#define BASE64_IMPLEMENT
+#include "base64.h"
+
 #include "keygen.h"
 
 #define SKEY_FILE "skey"
