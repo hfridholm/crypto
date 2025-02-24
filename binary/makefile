@@ -14,21 +14,17 @@ SOURCE_DIR := ../source
 OBJECT_DIR := ../object
 BINARY_DIR := ../binary
 
-# These are the source files and object files for the AES library
-AES_DIR := $(SOURCE_DIR)/aes
-AES_SOURCE_FILES := $(wildcard $(AES_DIR)/*.c)
-
 # These are the source files and object files for the RSA library
 RSA_DIR := $(SOURCE_DIR)/rsa
 RSA_SOURCE_FILES := $(wildcard $(RSA_DIR)/*.c)
 
-SYMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES)
+SYMCPT_SOURCE_FILES := $(RSA_SOURCE_FILES)
 SYMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(SYMCPT_SOURCE_FILES:.c=.o)))
 
 KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES)
 KEYGEN_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(KEYGEN_SOURCE_FILES:.c=.o)))
 
-ASMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES)
+ASMCPT_SOURCE_FILES := $(RSA_SOURCE_FILES)
 ASMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(ASMCPT_SOURCE_FILES:.c=.o)))
 
 # These are the executable programs that you can create

@@ -7,6 +7,8 @@
  */
 
 #include "rsa.h"
+
+#define AES_IMPLEMENT
 #include "aes.h"
 
 #define BASE64_IMPLEMENT

@@ -6,6 +6,7 @@
  * Last updated: 2024-11-15
  */
 
+#define AES_IMPLEMENT
 #include "aes.h"
 
 #define FILE_IMPLEMENT
