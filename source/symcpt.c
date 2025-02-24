@@ -6,7 +6,24 @@
  * Last updated: 2024-11-15
  */
 
-#include "symcpt.h"
+#include "aes.h"
+
+#define FILE_IMPLEMENT
+#include "file.h"
+
+#define DEBUG_IMPLEMENT
+#include "debug.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <string.h>
+#include <argp.h>
+
+extern char* sha256(char hash[64], const void* message, size_t size);
+
 
 #define DEFAULT_CIPHER "aes256"
 

@@ -6,10 +6,25 @@
  * Last updated: 2024-11-21
  */
 
+#include "rsa.h"
+#include "aes.h"
+
 #define BASE64_IMPLEMENT
 #include "base64.h"
 
-#include "keygen.h"
+#define FILE_IMPLEMENT
+#include "file.h"
+
+#define DEBUG_IMPLEMENT
+#include "debug.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <argp.h>
+
 
 #define SKEY_FILE "skey"
 #define PKEY_FILE "pkey"

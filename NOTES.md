@@ -1,7 +1,6 @@
 # Notes
 - allocate the result memory in skey_encode instead of filling result.
 - add quiet/silent argument to the utilities, and output messages
-- remove armcpt.h symcpt.h keygen.h
 - write good README.md
 
 ## Must
