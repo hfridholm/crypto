@@ -14,6 +14,9 @@
 #define DEBUG_IMPLEMENT
 #include "debug.h"
 
+#define SHA256_IMPLEMENT
+#include "sha256.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -21,8 +24,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <argp.h>
-
-extern char* sha256(char hash[64], const void* message, size_t size);
 
 
 #define DEFAULT_CIPHER "aes256"
