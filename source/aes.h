@@ -260,7 +260,7 @@ const uint8_t aes_mult14[256] = {
   0xa7, 0xa9, 0xbb, 0xb5, 0x9f, 0x91, 0x83, 0x8d
 };
 
-const uint8_t sbox[256] = {
+const uint8_t aes_sbox[256] = {
   0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
   0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
   0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0,
@@ -295,7 +295,7 @@ const uint8_t sbox[256] = {
   0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 };
 
-const uint8_t sbox_inv[256] = {
+const uint8_t aes_sbox_inv[256] = {
   0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38,
   0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
   0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87,
@@ -343,7 +343,7 @@ const uint8_t sbox_inv[256] = {
 #define AES_ROTWORD(b) (AES_LSHIFT(b, 8) | AES_RSHIFT(b, 24))
 
 // SBOX shift n bits
-#define AES_SBOXS(b, n) AES_LSHIFT(sbox[AES_RSHIFT(b, n) & 0xff], n)
+#define AES_SBOXS(b, n) AES_LSHIFT(aes_sbox[AES_RSHIFT(b, n) & 0xff], n)
 
 // SBOX on 32-bit word 4 bytes
 #define AES_SUBWORD(b) (AES_SBOXS(b, 24) | AES_SBOXS(b, 16) | AES_SBOXS(b, 8) | AES_SBOXS(b, 0))
@@ -399,7 +399,7 @@ static inline void aes_sub_bytes(uint8_t block[16])
 {
   for(uint8_t index = 0; index < 16; index++)
   {
-    block[index] = sbox[block[index]];
+    block[index] = aes_sbox[block[index]];
   }
 }
 
@@ -410,7 +410,7 @@ static inline void aes_sub_bytes_inverse(uint8_t block[16])
 {
   for(uint8_t index = 0; index < 16; index++)
   {
-    block[index] = sbox_inv[block[index]];
+    block[index] = aes_sbox_inv[block[index]];
   }
 }
 
@@ -457,7 +457,7 @@ static inline void aes_shift_rows_inverse(uint8_t block[16])
   aes_bytes_switch(block, 12, 13);
 }
 
-#define AES_ROW(a, b, c, d)     (a            ^ b             ^ aes_mult2 [c] ^ aes_mult3 [d])
+#define AES_ROW(a, b, c, d)     ((a)          ^ (b)           ^ aes_mult2 [c] ^ aes_mult3 [d])
 #define AES_ROW_INV(a, b, c, d) (aes_mult9[a] ^ aes_mult11[b] ^ aes_mult13[c] ^ aes_mult14[d])
 
 /*
