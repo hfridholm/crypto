@@ -1,18 +1,12 @@
 #
 # Written by Hampus Fridholm
 #
-# Last updated: 2024-11-21
+# Last updated: 2025-02-24
 #
-
-# These are the names of the targets
-CLEAN_TARGET := clean
-HELP_TARGET := help
-
-# These are the flags and command for the clean target
-DELETE_CMD := rm
 
 # This is the compiler and the compile flags you want to use
 COMPILER := gcc
+
 COMPILE_FLAGS := -Wall -Werror -g -Og -std=gnu99 -oFast
 LINKER_FLAGS := -lm -lgmp
 
@@ -28,13 +22,13 @@ AES_SOURCE_FILES := $(wildcard $(AES_DIR)/*.c)
 RSA_DIR := $(SOURCE_DIR)/rsa
 RSA_SOURCE_FILES := $(wildcard $(RSA_DIR)/*.c)
 
-SYMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/debug.c $(SOURCE_DIR)/sha256.c
+SYMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/debug.c $(SOURCE_DIR)/sha256.c
 SYMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(SYMCPT_SOURCE_FILES:.c=.o)))
 
-KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/debug.c
+KEYGEN_SOURCE_FILES := $(RSA_SOURCE_FILES) $(SOURCE_DIR)/debug.c
 KEYGEN_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(KEYGEN_SOURCE_FILES:.c=.o)))
 
-ASMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/file.c $(SOURCE_DIR)/debug.c
+ASMCPT_SOURCE_FILES := $(AES_SOURCE_FILES) $(RSA_SOURCE_FILES) $(SOURCE_DIR)/debug.c
 ASMCPT_OBJECT_FILES := $(addprefix $(OBJECT_DIR)/, $(notdir $(ASMCPT_SOURCE_FILES:.c=.o)))
 
 # These are the executable programs that you can create
@@ -58,14 +52,8 @@ $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/*/%.c
 $(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.c 
 	$(COMPILER) $< -c $(COMPILE_FLAGS) -o $@
 
-# These are the files that should be cleaned
-DELETE_FILES := $(OBJECT_DIR)/*.o $(PROGRAMS)
-
 # These are the files that should be kept (not automatically deleted)
 .PRECIOUS: $(OBJECT_DIR)/%.o $(PROGRAMS)
 
-$(CLEAN_TARGET):
-	$(DELETE_CMD) $(DELETE_FILES)
-
-$(HELP_TARGET):
-	@echo $(PROGRAMS) $(CLEAN_TARGET)
+clean:
+	rm $(OBJECT_DIR)/*.o $(PROGRAMS)

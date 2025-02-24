@@ -9,7 +9,9 @@
 #ifndef KEYGEN_H
 #define KEYGEN_H
 
+#define FILE_IMPLEMENT
 #include "file.h"
+
 #include "rsa.h"
 #include "aes.h"
 #include "debug.h"
