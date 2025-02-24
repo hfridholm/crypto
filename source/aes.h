@@ -1,5 +1,5 @@
 /*
- * aes.h - 
+ * aes.h - symetric encryption using AES
  *
  * Written by Hampus Fridholm
  *
@@ -9,7 +9,9 @@
  * In main compilation unit; define AES_IMPLEMENT
  *
  *
+ * int aes_encrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
  *
+ * int aes_decrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
  */
 
 #ifndef AES_H
@@ -48,7 +50,7 @@ extern int aes_decrypt(char** result, size_t* rsize, const void* message, size_t
 /*
  * Credit: https://en.wikipedia.org/wiki/Rijndael_MixColumns
  */
-const uint8_t mult2[256] = {
+const uint8_t aes_mult2[256] = {
   0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e,
   0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e,
   0x20, 0x22, 0x24, 0x26, 0x28, 0x2a, 0x2c, 0x2e,
@@ -83,7 +85,7 @@ const uint8_t mult2[256] = {
   0xeb, 0xe9, 0xef, 0xed, 0xe3, 0xe1, 0xe7, 0xe5
 };
 
-const uint8_t mult3[256] = {
+const uint8_t aes_mult3[256] = {
   0x00, 0x03, 0x06, 0x05, 0x0c, 0x0f, 0x0a, 0x09,
   0x18, 0x1b, 0x1e, 0x1d, 0x14, 0x17, 0x12, 0x11,
   0x30, 0x33, 0x36, 0x35, 0x3c, 0x3f, 0x3a, 0x39,
@@ -118,7 +120,7 @@ const uint8_t mult3[256] = {
   0x13, 0x10, 0x15, 0x16, 0x1f, 0x1c, 0x19, 0x1a
 };
 
-const uint8_t mult9[256] = {
+const uint8_t aes_mult9[256] = {
   0x00, 0x09, 0x12, 0x1b, 0x24, 0x2d, 0x36, 0x3f,
   0x48, 0x41, 0x5a, 0x53, 0x6c, 0x65, 0x7e, 0x77,
   0x90, 0x99, 0x82, 0x8b, 0xb4, 0xbd, 0xa6, 0xaf,
@@ -153,7 +155,7 @@ const uint8_t mult9[256] = {
   0x79, 0x70, 0x6b, 0x62, 0x5d, 0x54, 0x4f, 0x46
 };
 
-const uint8_t mult11[256] = {
+const uint8_t aes_mult11[256] = {
   0x00, 0x0b, 0x16, 0x1d, 0x2c, 0x27, 0x3a, 0x31,
   0x58, 0x53, 0x4e, 0x45, 0x74, 0x7f, 0x62, 0x69,
   0xb0, 0xbb, 0xa6, 0xad, 0x9c, 0x97, 0x8a, 0x81,
@@ -188,7 +190,7 @@ const uint8_t mult11[256] = {
   0x92, 0x99, 0x84, 0x8f, 0xbe, 0xb5, 0xa8, 0xa3
 };
 
-const uint8_t mult13[256] = {
+const uint8_t aes_mult13[256] = {
   0x00, 0x0d, 0x1a, 0x17, 0x34, 0x39, 0x2e, 0x23,
   0x68, 0x65, 0x72, 0x7f, 0x5c, 0x51, 0x46, 0x4b,
   0xd0, 0xdd, 0xca, 0xc7, 0xe4, 0xe9, 0xfe, 0xf3,
@@ -223,7 +225,7 @@ const uint8_t mult13[256] = {
   0xb4, 0xb9, 0xae, 0xa3, 0x80, 0x8d, 0x9a, 0x97
 };
 
-const uint8_t mult14[256] = {
+const uint8_t aes_mult14[256] = {
   0x00, 0x0e, 0x1c, 0x12, 0x38, 0x36, 0x24, 0x2a,
   0x70, 0x7e, 0x6c, 0x62, 0x48, 0x46, 0x54, 0x5a,
   0xe0, 0xee, 0xfc, 0xf2, 0xd8, 0xd6, 0xc4, 0xca,
@@ -328,28 +330,28 @@ const uint8_t sbox_inv[256] = {
   0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 };
 
-#define ROUND_KEYS(n) (((n) == 4) ? 11 : ((n) == 6) ? 13 : 15)
+#define AES_ROUND_KEYS(n) (((n) == 4) ? 11 : ((n) == 6) ? 13 : 15)
 
-#define LSHIFT(a, b) ((a) << (b))
-#define RSHIFT(a, b) ((a) >> (b))
+#define AES_LSHIFT(a, b) ((a) << (b))
+#define AES_RSHIFT(a, b) ((a) >> (b))
 
 /*
  * b0: 8 bits, b1: 8 bits, b2: 8 bits, b3: 8 bits
  *
  * RotWord([b0, b1, b2, b3]) = [b1, b2, b3, b0]
  */
-#define ROTWORD(b) (LSHIFT(b, 8) | RSHIFT(b, 24))
+#define AES_ROTWORD(b) (AES_LSHIFT(b, 8) | AES_RSHIFT(b, 24))
 
 // SBOX shift n bits
-#define SBOXS(b, n) LSHIFT(sbox[RSHIFT(b, n) & 0xff], n)
+#define AES_SBOXS(b, n) AES_LSHIFT(sbox[AES_RSHIFT(b, n) & 0xff], n)
 
 // SBOX on 32-bit word 4 bytes
-#define SUBWORD(b) (SBOXS(b, 24) | SBOXS(b, 16) | SBOXS(b, 8) | SBOXS(b, 0))
+#define AES_SUBWORD(b) (AES_SBOXS(b, 24) | AES_SBOXS(b, 16) | AES_SBOXS(b, 8) | AES_SBOXS(b, 0))
 
 
-#define RC(i) ((i) & 0x80 ? ((LSHIFT(i, 1) & 0xff) ^ 0x1b) : (LSHIFT(i, 1) & 0xff))
+#define AES_RC(i) ((i) & 0x80 ? ((AES_LSHIFT(i, 1) & 0xff) ^ 0x1b) : (AES_LSHIFT(i, 1) & 0xff))
 
-#define RCON(i) LSHIFT(RC(i), 24)
+#define AES_RCON(i) AES_LSHIFT(AES_RC(i), 24)
 
 /*
  * PARAMS
@@ -362,11 +364,11 @@ const uint8_t sbox_inv[256] = {
  * - 0 | Success
  * - 1 | Invalid key length
  */
-int key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
+static inline int aes_key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
 {
   if(ksize != AES_128 && ksize != AES_192 && ksize != AES_256) return 1;
 
-  uint8_t rounds = ROUND_KEYS(ksize);
+  uint8_t rounds = AES_ROUND_KEYS(ksize);
 
   for(uint8_t index = 0; index < (4 * rounds); index++)
   {
@@ -376,11 +378,11 @@ int key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
     }
     else if(index % ksize == 0)
     {
-      rkeys[index] = rkeys[index - ksize] ^ SUBWORD(ROTWORD(rkeys[index - 1])) ^ RCON(index / ksize);
+      rkeys[index] = rkeys[index - ksize] ^ AES_SUBWORD(AES_ROTWORD(rkeys[index - 1])) ^ AES_RCON(index / ksize);
     }
     else if(index % ksize == 4 && ksize > 6)
     {
-      rkeys[index] = rkeys[index - ksize] ^ SUBWORD(rkeys[index - 1]);
+      rkeys[index] = rkeys[index - ksize] ^ AES_SUBWORD(rkeys[index - 1]);
     }
     else
     {
@@ -393,7 +395,7 @@ int key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
 /*
  * SubBytes
  */
-static void sub_bytes(uint8_t block[16])
+static inline void aes_sub_bytes(uint8_t block[16])
 {
   for(uint8_t index = 0; index < 16; index++)
   {
@@ -404,7 +406,7 @@ static void sub_bytes(uint8_t block[16])
 /*
  * SubBytes - inverse
  */
-static void sub_bytes_inverse(uint8_t block[16])
+static inline void aes_sub_bytes_inverse(uint8_t block[16])
 {
   for(uint8_t index = 0; index < 16; index++)
   {
@@ -412,7 +414,7 @@ static void sub_bytes_inverse(uint8_t block[16])
   }
 }
 
-static void bytes_switch(uint8_t block[16], uint8_t a, uint8_t b)
+static inline void aes_bytes_switch(uint8_t block[16], uint8_t a, uint8_t b)
 {
   uint8_t temp = block[a];
 
@@ -424,44 +426,44 @@ static void bytes_switch(uint8_t block[16], uint8_t a, uint8_t b)
 /*
  * ShiftRows
  */
-static void shift_rows(uint8_t block[16])
+static inline void aes_shift_rows(uint8_t block[16])
 {
-  bytes_switch(block, 4, 5);
-  bytes_switch(block, 4, 6);
-  bytes_switch(block, 4, 7);
+  aes_bytes_switch(block, 4, 5);
+  aes_bytes_switch(block, 4, 6);
+  aes_bytes_switch(block, 4, 7);
 
-  bytes_switch(block, 8, 10);
-  bytes_switch(block, 9, 11);
+  aes_bytes_switch(block, 8, 10);
+  aes_bytes_switch(block, 9, 11);
 
-  bytes_switch(block, 12, 13);
-  bytes_switch(block, 12, 14);
-  bytes_switch(block, 12, 15);
+  aes_bytes_switch(block, 12, 13);
+  aes_bytes_switch(block, 12, 14);
+  aes_bytes_switch(block, 12, 15);
 }
 
 /*
  * ShiftRows - inverse
  */
-static void shift_rows_inverse(uint8_t block[16])
+static inline void aes_shift_rows_inverse(uint8_t block[16])
 {
-  bytes_switch(block, 4, 7);
-  bytes_switch(block, 4, 6);
-  bytes_switch(block, 4, 5);
+  aes_bytes_switch(block, 4, 7);
+  aes_bytes_switch(block, 4, 6);
+  aes_bytes_switch(block, 4, 5);
 
-  bytes_switch(block, 9, 11);
-  bytes_switch(block, 8, 10);
+  aes_bytes_switch(block, 9, 11);
+  aes_bytes_switch(block, 8, 10);
 
-  bytes_switch(block, 12, 15);
-  bytes_switch(block, 12, 14);
-  bytes_switch(block, 12, 13);
+  aes_bytes_switch(block, 12, 15);
+  aes_bytes_switch(block, 12, 14);
+  aes_bytes_switch(block, 12, 13);
 }
 
-#define ROW(a, b, c, d)     (a        ^ b         ^ mult2[c]  ^ mult3[d])
-#define ROW_INV(a, b, c, d) (mult9[a] ^ mult11[b] ^ mult13[c] ^ mult14[d])
+#define AES_ROW(a, b, c, d)     (a            ^ b             ^ aes_mult2 [c] ^ aes_mult3 [d])
+#define AES_ROW_INV(a, b, c, d) (aes_mult9[a] ^ aes_mult11[b] ^ aes_mult13[c] ^ aes_mult14[d])
 
 /*
  * MixColumns
  */
-static void mix_columns(uint8_t block[16])
+static inline void aes_mix_columns(uint8_t block[16])
 {
   for(uint8_t column = 0; column < 4; column++)
   {
@@ -470,17 +472,17 @@ static void mix_columns(uint8_t block[16])
     uint8_t c = block[column +  8];
     uint8_t d = block[column + 12];
 
-    block[column]      = ROW(c, d, a, b);
-    block[column +  4] = ROW(d, a, b, c);
-    block[column +  8] = ROW(a, b, c, d);
-    block[column + 12] = ROW(b, c, d, a);
+    block[column]      = AES_ROW(c, d, a, b);
+    block[column +  4] = AES_ROW(d, a, b, c);
+    block[column +  8] = AES_ROW(a, b, c, d);
+    block[column + 12] = AES_ROW(b, c, d, a);
   }
 }
 
 /*
  * MixColumns - inverse
  */
-static void mix_columns_inverse(uint8_t block[16])
+static inline void aes_mix_columns_inverse(uint8_t block[16])
 {
   for(uint8_t column = 0; column < 4; column++)
   {
@@ -489,17 +491,17 @@ static void mix_columns_inverse(uint8_t block[16])
     uint8_t c = block[column +  8];
     uint8_t d = block[column + 12];
 
-    block[column]      = ROW_INV(d, b, c, a);
-    block[column +  4] = ROW_INV(a, c, d, b);
-    block[column +  8] = ROW_INV(b, d, a, c);
-    block[column + 12] = ROW_INV(c, a, b, d);
+    block[column]      = AES_ROW_INV(d, b, c, a);
+    block[column +  4] = AES_ROW_INV(a, c, d, b);
+    block[column +  8] = AES_ROW_INV(b, d, a, c);
+    block[column + 12] = AES_ROW_INV(c, a, b, d);
   }
 }
 
 /*
  * AddRoundKey
  */
-static void add_round_key(uint8_t block[16], const uint8_t rkey[16])
+static inline void aes_add_round_key(uint8_t block[16], const uint8_t rkey[16])
 {
   for(uint8_t index = 0; index < 16; index++)
   {
@@ -510,29 +512,29 @@ static void add_round_key(uint8_t block[16], const uint8_t rkey[16])
 /*
  *
  */
-static void aes_block_encrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
+static inline void aes_block_encrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
 {
   uint8_t block[16];
   memcpy(block, input, 16);
 
-  add_round_key(block, rkeys);
+  aes_add_round_key(block, rkeys);
 
   for(int index = 1; index < (rounds - 2); index++)
   {
-    sub_bytes(block);
+    aes_sub_bytes(block);
 
-    shift_rows(block);
+    aes_shift_rows(block);
 
-    mix_columns(block);
+    aes_mix_columns(block);
     
-    add_round_key(block, rkeys + index * 16);
+    aes_add_round_key(block, rkeys + index * 16);
   }
 
-  sub_bytes(block);
+  aes_sub_bytes(block);
 
-  shift_rows(block);
+  aes_shift_rows(block);
 
-  add_round_key(block, rkeys + 16 * (rounds - 1));
+  aes_add_round_key(block, rkeys + 16 * (rounds - 1));
 
   memcpy(result, block, 16);
 }
@@ -540,37 +542,35 @@ static void aes_block_encrypt(uint8_t result[16], const uint8_t input[16], const
 /*
  *
  */
-static void aes_block_decrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
+static inline void aes_block_decrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
 {
   uint8_t block[16];
   memcpy(block, input, 16);
 
-  add_round_key(block, rkeys + 16 * (rounds - 1));
+  aes_add_round_key(block, rkeys + 16 * (rounds - 1));
 
-  shift_rows_inverse(block);
+  aes_shift_rows_inverse(block);
 
-  sub_bytes_inverse(block);
+  aes_sub_bytes_inverse(block);
 
   for(uint8_t index = (rounds - 2); index-- > 1;)
   {
-    add_round_key(block, rkeys + 16 * index);
+    aes_add_round_key(block, rkeys + 16 * index);
 
-    mix_columns_inverse(block);
+    aes_mix_columns_inverse(block);
 
-    shift_rows_inverse(block);
+    aes_shift_rows_inverse(block);
 
-    sub_bytes_inverse(block);
+    aes_sub_bytes_inverse(block);
   }
   
-  add_round_key(block, rkeys);
+  aes_add_round_key(block, rkeys);
 
   memcpy(result, block, 16);
 }
 
 /*
  * Encrypt message using AES key of different sizes
- *
- * Maybe: Add size_t* rsize argument for result size and rename size to msize
  *
  * RETURN (int status)
  * - 0 | Success
@@ -581,11 +581,11 @@ int aes_encrypt(char** result, size_t* rsize, const void* message, size_t msize,
   if(!result || !message || !key) return 1;
 
   // 1. Expand the key
-  uint8_t rounds = ROUND_KEYS(ksize);
+  uint8_t rounds = AES_ROUND_KEYS(ksize);
 
   uint32_t rkeys[4 * rounds];
 
-  if(key_expand(rkeys, (uint32_t*) key, ksize) != 0)
+  if(aes_key_expand(rkeys, (uint32_t*) key, ksize) != 0)
   {
     return 2;
   }
@@ -632,11 +632,11 @@ int aes_decrypt(char** result, size_t* rsize, const void* message, size_t msize,
   if(!result || !message || !key) return 1;
 
   // 1. Expand the key
-  uint8_t rounds = ROUND_KEYS(ksize);
+  uint8_t rounds = AES_ROUND_KEYS(ksize);
 
   uint32_t rkeys[4 * rounds];
 
-  if(key_expand(rkeys, (uint32_t*) key, ksize) != 0)
+  if(aes_key_expand(rkeys, (uint32_t*) key, ksize) != 0)
   {
     return 2;
   }
