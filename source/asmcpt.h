@@ -14,6 +14,8 @@
 
 #include "rsa.h"
 #include "aes.h"
+
+#define DEBUG_IMPLEMENT
 #include "debug.h"
 
 #include <stdbool.h>
