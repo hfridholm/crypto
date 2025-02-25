@@ -3,6 +3,10 @@
  *
  * Written by Hampus Fridholm
  *
+ * Credit:
+ * https://en.wikipedia.org/wiki/RSA_(cryptosystem)
+ * https://gmplib.org
+ *
  * Last updated: 2025-02-25
  *
  *

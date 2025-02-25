@@ -3,6 +3,8 @@
  *
  * Written by Hampus Fridholm
  *
+ * Credit: https://en.wikipedia.org/wiki/Base64
+ *
  * Last updated: 2024-12-06
  *
  *
