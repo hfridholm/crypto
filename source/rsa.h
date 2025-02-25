@@ -351,7 +351,7 @@ int rsa_pkey_encode(char** result, size_t* size, const pkey_t* key)
 }
 
 /*
- *
+ * Initialize public key struct variables
  */
 static inline void rsa_pkey_init(pkey_t* key)
 {
@@ -360,7 +360,7 @@ static inline void rsa_pkey_init(pkey_t* key)
 }
 
 /*
- *
+ * Free public key struct variables
  */
 void rsa_pkey_free(pkey_t* key)
 {
@@ -369,7 +369,7 @@ void rsa_pkey_free(pkey_t* key)
 }
 
 /*
- *
+ * Decode encoded public key struct
  */
 int rsa_pkey_decode(pkey_t* key, const void* message, size_t size)
 {
@@ -465,7 +465,7 @@ int rsa_skey_encode(char** result, size_t* size, const skey_t* key)
 }
 
 /*
- *
+ * Initialize secret key struct variables
  */
 static inline void rsa_skey_init(skey_t* key)
 {
@@ -477,7 +477,7 @@ static inline void rsa_skey_init(skey_t* key)
 }
 
 /*
- *
+ * Free secret key struct variables
  */
 void rsa_skey_free(skey_t* key)
 {
@@ -489,7 +489,7 @@ void rsa_skey_free(skey_t* key)
 }
 
 /*
- *
+ * Decode encoded secret key struct
  */
 int rsa_skey_decode(skey_t* key, const void* message, size_t size)
 {
@@ -527,7 +527,7 @@ int rsa_skey_decode(skey_t* key, const void* message, size_t size)
 }
 
 /*
- *
+ * Encrypt message using RSA public key
  */
 int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key)
 {
@@ -561,7 +561,7 @@ int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, p
 }
 
 /*
- *
+ * Decrypt encrypted message using RSA secret key (private key)
  */
 int rsa_decrypt(void* result, size_t* rsize, const void* message, size_t size, skey_t* key)
 {
