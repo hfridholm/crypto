@@ -119,7 +119,7 @@ static int skey_base64_encode(char** result, size_t* size, const skey_t* key)
   char* buffer;
   size_t buffer_size;
 
-  if(skey_encode(&buffer, &buffer_size, key) != 0)
+  if(rsa_skey_encode(&buffer, &buffer_size, key) != 0)
   {
     return 1;
   }
@@ -144,7 +144,7 @@ static int pkey_base64_encode(char** result, size_t* size, const pkey_t* key)
   char* buffer;
   size_t buffer_size;
 
-  if(pkey_encode(&buffer, &buffer_size, key) != 0)
+  if(rsa_pkey_encode(&buffer, &buffer_size, key) != 0)
   {
     return 1;
   }
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
   skey_t skey;
   pkey_t pkey;
 
-  keys_generate(&skey, &pkey);
+  rsa_keys_generate(&skey, &pkey);
 
 
   if(pkey_handler(&pkey) != 0)
@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
       fprintf(stderr, "keygen : Failed to write secret key\n");
   }
 
-  keys_free(&skey, &pkey);
+  rsa_keys_free(&skey, &pkey);
 
   if(args.debug)
     info_print("End of main");

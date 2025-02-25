@@ -9,6 +9,29 @@
  * In main compilation unit; define AES_IMPLEMENT
  *
  *
+ * int  rsa_keys_generate(skey_t* skey, pkey_t* pkey)
+ *
+ *
+ * int  rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key)
+ *
+ * int  rsa_decrypt(void* result, size_t* rsize, const void* message, size_t size, skey_t* key)
+ *
+ *
+ * int  rsa_skey_encode(char** result, size_t* size, const skey_t* key)
+ *
+ * int  rsa_skey_decode(skey_t* key, const void* message, size_t size)
+ *
+ *
+ * int  rsa_pkey_encode(char** result, size_t* size, const pkey_t* key)
+ *
+ * int  rsa_pkey_decode(pkey_t* key, const void* message, size_t size)
+ *
+ *
+ * void rsa_keys_free(skey_t* skey, pkey_t* pkey)
+ *
+ * void rsa_skey_free(skey_t* key)
+ *
+ * void rsa_pkey_free(pkey_t* key)
  */
 
 #ifndef RSA_H
@@ -16,14 +39,12 @@
 
 #include <stdlib.h>
 #include <gmp.h>
-#include <stdio.h>
-#include <string.h>
 
 #define MODULUS_SIZE 512
 
-#define ENCRYPT_SIZE (MODULUS_SIZE / 8)
+#define ENCRYPT_SIZE  (MODULUS_SIZE / 8)
 
-#define BUFFER_SIZE ((MODULUS_SIZE / 8) / 2)
+#define BUFFER_SIZE  ((MODULUS_SIZE / 8) / 2)
 
 #define MESSAGE_SIZE ((MODULUS_SIZE / 8) - 11)
 
@@ -42,30 +63,29 @@ typedef struct
   mpz_t q; // Prime q
 } skey_t;
 
-extern int  keys_generate(skey_t* skey, pkey_t* pkey);
-
-extern void keys_free(skey_t* skey, pkey_t* pkey);
+extern int  rsa_keys_generate(skey_t* skey, pkey_t* pkey);
 
 
-extern int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key);
+extern int  rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key);
 
-extern int rsa_decrypt(void* result, size_t* rsize, const void* message, size_t size, skey_t* key);
-
-
-extern int skey_encode(char** result, size_t* size, const skey_t* key);
-
-extern int skey_decode(skey_t* key, const void* message, size_t size);
+extern int  rsa_decrypt(void* result, size_t* rsize, const void* message, size_t size, skey_t* key);
 
 
-extern void skey_free(skey_t* key);
+extern int  rsa_skey_encode(char** result, size_t* size, const skey_t* key);
+
+extern int  rsa_skey_decode(skey_t* key, const void* message, size_t size);
 
 
-extern int pkey_encode(char** result, size_t* size, const pkey_t* key);
+extern int  rsa_pkey_encode(char** result, size_t* size, const pkey_t* key);
 
-extern int pkey_decode(pkey_t* key, const void* message, size_t size);
+extern int  rsa_pkey_decode(pkey_t* key, const void* message, size_t size);
 
 
-extern void pkey_free(pkey_t* key);
+extern void rsa_keys_free(skey_t* skey, pkey_t* pkey);
+
+extern void rsa_skey_free(skey_t* key);
+
+extern void rsa_pkey_free(pkey_t* key);
 
 #endif // RSA_H
 
@@ -77,10 +97,13 @@ extern void pkey_free(pkey_t* key);
 
 #ifdef RSA_IMPLEMENT
 
+#include <stdio.h>
+#include <string.h>
+
 /*
  * Duplicate a mpz_t variable
  */
-static void mpz_dup(mpz_t dest, const mpz_t src)
+static inline void mpz_dup(mpz_t dest, const mpz_t src)
 {
   mpz_init(dest);
 
@@ -90,7 +113,7 @@ static void mpz_dup(mpz_t dest, const mpz_t src)
 /*
  * Calculate phi: (p - 1)(q - 1)
  */
-static void mpz_phi(mpz_t phi, const mpz_t p, const mpz_t q)
+static inline void mpz_phi(mpz_t phi, const mpz_t p, const mpz_t q)
 {
   mpz_t tp, tq;
 
@@ -113,7 +136,7 @@ static void mpz_phi(mpz_t phi, const mpz_t p, const mpz_t q)
  * - 0 | Success
  * - 1 | No valid d exists
  */
-static int choose_d(mpz_t d, const mpz_t e, const mpz_t phi)
+static inline int rsa_choose_d(mpz_t d, const mpz_t e, const mpz_t phi)
 {
   if(mpz_invert(d, e, phi) != 0) return 0;
 
@@ -141,7 +164,7 @@ static int choose_d(mpz_t d, const mpz_t e, const mpz_t phi)
  * EXPECT
  * - prime is initted and allocated
  */
-static void prime_generate(mpz_t prime)
+static inline void rsa_prime_generate(mpz_t prime)
 {
   char buffer[BUFFER_SIZE];
 
@@ -167,7 +190,7 @@ static void prime_generate(mpz_t prime)
 /*
  * Tweak the prime number to be a good choise
  */
-static void prime_tweak(mpz_t prime, mpz_t e)
+static inline void rsa_prime_tweak(mpz_t prime, mpz_t e)
 {
   mpz_t tmp;
   mpz_init(tmp);
@@ -192,17 +215,17 @@ static void prime_tweak(mpz_t prime, mpz_t e)
  *
  * The primes should not be the same number
  */
-static void primes_generate(mpz_t p, mpz_t q, mpz_t e)
+static inline void rsa_primes_generate(mpz_t p, mpz_t q, mpz_t e)
 {
-  prime_generate(p);
+  rsa_prime_generate(p);
 
-  prime_tweak(p, e);
+  rsa_prime_tweak(p, e);
 
   do
   {
-    prime_generate(q);
+    rsa_prime_generate(q);
 
-    prime_tweak(q, e);
+    rsa_prime_tweak(q, e);
   }
   while(mpz_cmp(p, q) == 0);
 }
@@ -212,7 +235,7 @@ static void primes_generate(mpz_t p, mpz_t q, mpz_t e)
  *
  * Probably: Only do the operation once, and remove the for loop
  */
-static void key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz_t phi)
+static inline void rsa_key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz_t phi)
 {
   // 1. Choose e
   mpz_set_ui(e, 3);
@@ -220,7 +243,7 @@ static void key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz
   for(size_t count = 1; count <= 100; count++)
   {
     // 2. Generate large primes p and q
-    primes_generate(p, q, e);
+    rsa_primes_generate(p, q, e);
 
     // 3. Multiply p and q to get n
     mpz_mul(n, p, q);
@@ -229,7 +252,7 @@ static void key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz
     mpz_phi(phi, p, q);
 
     // 5. Choose d
-    if(choose_d(d, e, phi) == 0) break;
+    if(rsa_choose_d(d, e, phi) == 0) break;
 
     printf("Failed to generate key values: %ld\n", count);
   }
@@ -238,13 +261,13 @@ static void key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz
 /*
  * Generate the secret and the public keys
  */
-int keys_generate(skey_t* skey, pkey_t* pkey)
+int rsa_keys_generate(skey_t* skey, pkey_t* pkey)
 {
   mpz_t p, q, n, e, d, phi;
 
   mpz_inits(p, q, n, e, d, phi, NULL);
 
-  key_values_generate(p, q, n, e, d, phi);
+  rsa_key_values_generate(p, q, n, e, d, phi);
 
   if(pkey)
   {
@@ -269,11 +292,11 @@ int keys_generate(skey_t* skey, pkey_t* pkey)
 /*
  * Free the secret and the public keys
  */
-void keys_free(skey_t* skey, pkey_t* pkey)
+void rsa_keys_free(skey_t* skey, pkey_t* pkey)
 {
-  if(pkey) pkey_free(pkey);
+  if(pkey) rsa_pkey_free(pkey);
 
-  if(skey) skey_free(skey);
+  if(skey) rsa_skey_free(skey);
 }
 
 typedef struct
@@ -290,7 +313,7 @@ typedef struct
  *
  * The function allocates memory to result, that has to be freed
  */
-int pkey_encode(char** result, size_t* size, const pkey_t* key)
+int rsa_pkey_encode(char** result, size_t* size, const pkey_t* key)
 {
   if(!result || !size || !key) return 1;
 
@@ -317,7 +340,7 @@ int pkey_encode(char** result, size_t* size, const pkey_t* key)
 /*
  *
  */
-void pkey_init(pkey_t* key)
+static inline void rsa_pkey_init(pkey_t* key)
 {
   mpz_init(key->n);
   mpz_init(key->e);
@@ -326,7 +349,7 @@ void pkey_init(pkey_t* key)
 /*
  *
  */
-void pkey_free(pkey_t* key)
+void rsa_pkey_free(pkey_t* key)
 {
   mpz_clear(key->n);
   mpz_clear(key->e);
@@ -335,7 +358,7 @@ void pkey_free(pkey_t* key)
 /*
  *
  */
-int pkey_decode(pkey_t* key, const void* message, size_t size)
+int rsa_pkey_decode(pkey_t* key, const void* message, size_t size)
 {
   if(!key || !message) return 1;
 
@@ -345,7 +368,7 @@ int pkey_decode(pkey_t* key, const void* message, size_t size)
 
   memcpy(&key_enc, message, sizeof(pkey_enc_t));
 
-  pkey_init(key);
+  rsa_pkey_init(key);
 
   mpz_import(key->n, key_enc.ns, 1, sizeof(char), 0, 0, key_enc.n);
 
@@ -374,7 +397,7 @@ typedef struct
  *
  * The function allocates memory to result, that has to be freed
  */
-int skey_encode(char** result, size_t* size, const skey_t* key)
+int rsa_skey_encode(char** result, size_t* size, const skey_t* key)
 {
   if(!result || !size || !key) return 1;
 
@@ -407,7 +430,7 @@ int skey_encode(char** result, size_t* size, const skey_t* key)
 /*
  *
  */
-void skey_init(skey_t* key)
+static inline void rsa_skey_init(skey_t* key)
 {
   mpz_init(key->n);
   mpz_init(key->e);
@@ -419,7 +442,7 @@ void skey_init(skey_t* key)
 /*
  *
  */
-void skey_free(skey_t* key)
+void rsa_skey_free(skey_t* key)
 {
   mpz_clear(key->n);
   mpz_clear(key->e);
@@ -431,7 +454,7 @@ void skey_free(skey_t* key)
 /*
  *
  */
-int skey_decode(skey_t* key, const void* message, size_t size)
+int rsa_skey_decode(skey_t* key, const void* message, size_t size)
 {
   if(!key || !message) return 1;
 
@@ -441,7 +464,7 @@ int skey_decode(skey_t* key, const void* message, size_t size)
 
   memcpy(&key_enc, message, sizeof(skey_enc_t));
 
-  skey_init(key);
+  rsa_skey_init(key);
 
   mpz_import(key->n, key_enc.ns, 1, sizeof(char), 0, 0, key_enc.n);
 

@@ -143,7 +143,7 @@ static int base64_skey_decode(skey_t* key, const void* message, size_t size)
     return 1;
   }
 
-  if(skey_decode(key, buffer, buffer_size) != 0)
+  if(rsa_skey_decode(key, buffer, buffer_size) != 0)
   {
     free(buffer);
 
@@ -168,7 +168,7 @@ static int base64_pkey_decode(pkey_t* key, const void* message, size_t size)
     return 1;
   }
 
-  if(pkey_decode(key, buffer, buffer_size) != 0)
+  if(rsa_pkey_decode(key, buffer, buffer_size) != 0)
   {
     free(buffer);
 
@@ -368,7 +368,7 @@ static void encrypt_routine(const void* message, size_t size)
     free(result);
   }
 
-  pkey_free(&pkey);
+  rsa_pkey_free(&pkey);
 }
 
 /*
@@ -396,7 +396,7 @@ static void decrypt_routine(const void* message, size_t size)
     free(result);
   }
 
-  skey_free(&skey);
+  rsa_skey_free(&skey);
 }
 
 static struct argp argp = { options, opt_parse, args_doc, doc };
