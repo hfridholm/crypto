@@ -7,7 +7,7 @@
  *         https://en.wikipedia.org/wiki/Rijndael_MixColumns
  *         https://en.wikipedia.org/wiki/Rijndael_S-box
  *
- * Last updated: 2025-02-24
+ * Last updated: 2025-02-25
  *
  *
  * In main compilation unit; define AES_IMPLEMENT
@@ -370,17 +370,17 @@ static inline void aes_key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t 
 {
   uint8_t rounds = AES_ROUND_KEYS(ksize);
 
-  for(uint8_t index = 0; index < (4 * rounds); index++)
+  for (uint8_t index = 0; index < (4 * rounds); index++)
   {
-    if(index < ksize)
+    if (index < ksize)
     {
       rkeys[index] = key[index];
     }
-    else if(index % ksize == 0)
+    else if (index % ksize == 0)
     {
       rkeys[index] = rkeys[index - ksize] ^ AES_SUBWORD(AES_ROTWORD(rkeys[index - 1])) ^ AES_RCON(index / ksize);
     }
-    else if(index % ksize == 4 && ksize > 6)
+    else if (index % ksize == 4 && ksize > 6)
     {
       rkeys[index] = rkeys[index - ksize] ^ AES_SUBWORD(rkeys[index - 1]);
     }
@@ -398,7 +398,7 @@ static inline void aes_key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t 
  */
 static inline void aes_sub_bytes(uint8_t block[16])
 {
-  for(uint8_t index = 0; index < 16; index++)
+  for (uint8_t index = 0; index < 16; index++)
   {
     block[index] = aes_sbox[block[index]];
   }
@@ -413,7 +413,7 @@ static inline void aes_sub_bytes(uint8_t block[16])
  */
 static inline void aes_sub_bytes_inverse(uint8_t block[16])
 {
-  for(uint8_t index = 0; index < 16; index++)
+  for (uint8_t index = 0; index < 16; index++)
   {
     block[index] = aes_sbox_inv[block[index]];
   }
@@ -481,7 +481,7 @@ static inline void aes_shift_rows_inverse(uint8_t block[16])
  */
 static inline void aes_mix_columns(uint8_t block[16])
 {
-  for(uint8_t column = 0; column < 4; column++)
+  for (uint8_t column = 0; column < 4; column++)
   {
     uint8_t a = block[column];
     uint8_t b = block[column +  4];
@@ -502,7 +502,7 @@ static inline void aes_mix_columns(uint8_t block[16])
  */
 static inline void aes_mix_columns_inverse(uint8_t block[16])
 {
-  for(uint8_t column = 0; column < 4; column++)
+  for (uint8_t column = 0; column < 4; column++)
   {
     uint8_t a = block[column];
     uint8_t b = block[column +  4];
@@ -521,7 +521,7 @@ static inline void aes_mix_columns_inverse(uint8_t block[16])
  */
 static inline void aes_add_round_key(uint8_t block[16], const uint8_t rkey[16])
 {
-  for(uint8_t index = 0; index < 16; index++)
+  for (uint8_t index = 0; index < 16; index++)
   {
     block[index] ^= rkey[index];
   }
@@ -541,7 +541,7 @@ static inline void aes_block_encrypt(uint8_t result[16], const uint8_t input[16]
   aes_add_round_key(block, rkeys);
 
   // 2. Perform block cycle rounds - 1 times
-  for(int index = 1; index < (rounds - 2); index++)
+  for (int index = 1; index < (rounds - 2); index++)
   {
     aes_sub_bytes(block);
 
@@ -583,7 +583,7 @@ static inline void aes_block_decrypt(uint8_t result[16], const uint8_t input[16]
   aes_sub_bytes_inverse(block);
 
   // 2. Perform block cycle for rounds - 1 times
-  for(uint8_t index = (rounds - 2); index-- > 1;)
+  for (uint8_t index = (rounds - 2); index-- > 1;)
   {
     aes_add_round_key(block, rkeys + 16 * index);
 
@@ -648,13 +648,13 @@ int aes_encrypt(uint8_t** result, size_t* rsize, const void* message, size_t msi
 
   *result = temp_result;
 
-  if(rsize) *rsize = AES_SIZE(msize);
+  if (rsize) *rsize = AES_SIZE(msize);
 
   // 3. Encrypt the whole blocks in message
   size_t  index;
   uint8_t block[16];
 
-  for(index = 0; index + 16 <= msize; index += 16)
+  for (index = 0; index + 16 <= msize; index += 16)
   {
     memcpy(block, (uint8_t*) message + index, 16);
 
@@ -662,7 +662,7 @@ int aes_encrypt(uint8_t** result, size_t* rsize, const void* message, size_t msi
   }
 
   // 4. Encrypt the rest of the message
-  if(index < msize)
+  if (index < msize)
   {
     memset(block, 0, 16);
 
@@ -726,7 +726,7 @@ int aes_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msi
   size_t  index;
   uint8_t block[16];
 
-  for(index = 0; index + 16 <= msize; index += 16)
+  for (index = 0; index + 16 <= msize; index += 16)
   {
     memcpy(block, (uint8_t*) message + index, 16);
 
@@ -734,7 +734,7 @@ int aes_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msi
   }
 
   // 4. Decrypt the rest of the message
-  if(index < msize)
+  if (index < msize)
   {
     memset(block, 0, 16);
 
@@ -744,11 +744,11 @@ int aes_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msi
   }
 
   // 5. Get the size of the result, by trimming trailing bytes
-  if(rsize)
+  if (rsize)
   {
     *rsize = msize;
 
-    while(*rsize > 0 && ((uint8_t*) *result)[*rsize - 1] == 0x00)
+    while (*rsize > 0 && ((uint8_t*) *result)[*rsize - 1] == 0x00)
     {
       (*rsize)--;
     }
