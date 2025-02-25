@@ -6,8 +6,8 @@
  * Last updated: 2024-11-21
  */
 
+#define RSA_IMPLEMENT
 #include "rsa.h"
-#include "aes.h"
 
 #define BASE64_IMPLEMENT
 #include "base64.h"

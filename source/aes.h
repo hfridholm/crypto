@@ -1,5 +1,5 @@
 /*
- * aes.h - symetric encryption using AES
+ * aes.h - implementation of AES algorithm
  *
  * Written by Hampus Fridholm
  *

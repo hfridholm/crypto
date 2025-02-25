@@ -6,6 +6,7 @@
  * Last updated: 2024-11-21
  */
 
+#define RSA_IMPLEMENT
 #include "rsa.h"
 
 #define AES_IMPLEMENT
