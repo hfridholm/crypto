@@ -3,20 +3,25 @@
  *
  * Written by Hampus Fridholm
  *
+ * Credit: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+ *         https://en.wikipedia.org/wiki/Rijndael_MixColumns
+ *         https://en.wikipedia.org/wiki/Rijndael_S-box
+ *
  * Last updated: 2025-02-24
  *
  *
  * In main compilation unit; define AES_IMPLEMENT
  *
  *
- * int aes_encrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
+ * int aes_encrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
  *
- * int aes_decrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
+ * int aes_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
  */
 
 #ifndef AES_H
 #define AES_H
 
+#include <stdint.h>
 #include <stddef.h>
 
 typedef enum
@@ -29,9 +34,9 @@ typedef enum
 
 #define AES_SIZE(SIZE) (((SIZE) + 15) & ~15)
 
-extern int aes_encrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize);
+extern int aes_encrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize);
 
-extern int aes_decrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize);
+extern int aes_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize);
 
 #endif // AES_H
 
@@ -43,9 +48,9 @@ extern int aes_decrypt(char** result, size_t* rsize, const void* message, size_t
 
 #ifdef AES_IMPLEMENT
 
-#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 /*
  * Credit: https://en.wikipedia.org/wiki/Rijndael_MixColumns
@@ -260,6 +265,9 @@ const uint8_t aes_mult14[256] = {
   0xa7, 0xa9, 0xbb, 0xb5, 0x9f, 0x91, 0x83, 0x8d
 };
 
+/*
+ * Credit: https://en.wikipedia.org/wiki/Rijndael_S-box
+ */
 const uint8_t aes_sbox[256] = {
   0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
   0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -354,20 +362,12 @@ const uint8_t aes_sbox_inv[256] = {
 #define AES_RCON(i) AES_LSHIFT(AES_RC(i), 24)
 
 /*
- * PARAMS
- * - uint32_t* rkeys     | The 32-bit words of the expanded key
- * - const uint32_t* key | The AES key in 32-bit words
- * - ksize_t ksize       | The amount of 32-bit words in the AES key
- * 4 words for AES-128, 6 words for AES-192, 8 words for AES-256
+ * Expand key to a number of round keys used to encrypt / decrypt message
  *
- * RETURN (int status)
- * - 0 | Success
- * - 1 | Invalid key length
+ * Credit: https://en.wikipedia.org/wiki/AES_key_schedule
  */
-static inline int aes_key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
+static inline void aes_key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t ksize)
 {
-  if(ksize != AES_128 && ksize != AES_192 && ksize != AES_256) return 1;
-
   uint8_t rounds = AES_ROUND_KEYS(ksize);
 
   for(uint8_t index = 0; index < (4 * rounds); index++)
@@ -389,11 +389,12 @@ static inline int aes_key_expand(uint32_t* rkeys, const uint32_t* key, ksize_t k
       rkeys[index] = rkeys[index - ksize] ^ rkeys[index - 1];
     }
   }
-  return 0;
 }
 
 /*
- * SubBytes
+ * SubBytes - substitute bytes from block and sbox lookup table
+ *
+ * Credit: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard#The_SubBytes_step
  */
 static inline void aes_sub_bytes(uint8_t block[16])
 {
@@ -404,7 +405,11 @@ static inline void aes_sub_bytes(uint8_t block[16])
 }
 
 /*
- * SubBytes - inverse
+ * InverseSubBytes - inverse function of SubBytes
+ *
+ * Substituting from sbox_inverse instead of sbox lookup table
+ *
+ * Credit: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard#The_SubBytes_step
  */
 static inline void aes_sub_bytes_inverse(uint8_t block[16])
 {
@@ -414,6 +419,11 @@ static inline void aes_sub_bytes_inverse(uint8_t block[16])
   }
 }
 
+/*
+ * Switch two bytes, a and b, in AES block
+ *
+ * Maybe: Remove this function and use temp variable in aes_shift_rows and _inverse
+ */
 static inline void aes_bytes_switch(uint8_t block[16], uint8_t a, uint8_t b)
 {
   uint8_t temp = block[a];
@@ -424,7 +434,9 @@ static inline void aes_bytes_switch(uint8_t block[16], uint8_t a, uint8_t b)
 }
 
 /*
- * ShiftRows
+ * ShiftRows - bytes in each row are shifted cyclically to the left
+ *
+ * Credit: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard#The_ShiftRows_step
  */
 static inline void aes_shift_rows(uint8_t block[16])
 {
@@ -441,7 +453,9 @@ static inline void aes_shift_rows(uint8_t block[16])
 }
 
 /*
- * ShiftRows - inverse
+ * InverseShiftRows - inverse function of ShiftRows
+ *
+ * Credit: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard#The_ShiftRows_step
  */
 static inline void aes_shift_rows_inverse(uint8_t block[16])
 {
@@ -462,6 +476,8 @@ static inline void aes_shift_rows_inverse(uint8_t block[16])
 
 /*
  * MixColumns
+ *
+ * Credit: https://en.wikipedia.org/wiki/Rijndael_MixColumns
  */
 static inline void aes_mix_columns(uint8_t block[16])
 {
@@ -480,7 +496,9 @@ static inline void aes_mix_columns(uint8_t block[16])
 }
 
 /*
- * MixColumns - inverse
+ * InverseMixColumns - inverse function of MixColumns
+ *
+ * Credit: https://en.wikipedia.org/wiki/Rijndael_MixColumns
  */
 static inline void aes_mix_columns_inverse(uint8_t block[16])
 {
@@ -499,7 +517,7 @@ static inline void aes_mix_columns_inverse(uint8_t block[16])
 }
 
 /*
- * AddRoundKey
+ * AddRoundKey - XOR each block byte with round key byte
  */
 static inline void aes_add_round_key(uint8_t block[16], const uint8_t rkey[16])
 {
@@ -510,15 +528,19 @@ static inline void aes_add_round_key(uint8_t block[16], const uint8_t rkey[16])
 }
 
 /*
+ * Encrypt AES block
  *
+ * Credit: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard#High-level_description_of_the_algorithm
  */
 static inline void aes_block_encrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
 {
   uint8_t block[16];
   memcpy(block, input, 16);
 
+  // 1. Add round key
   aes_add_round_key(block, rkeys);
 
+  // 2. Perform block cycle rounds - 1 times
   for(int index = 1; index < (rounds - 2); index++)
   {
     aes_sub_bytes(block);
@@ -530,6 +552,7 @@ static inline void aes_block_encrypt(uint8_t result[16], const uint8_t input[16]
     aes_add_round_key(block, rkeys + index * 16);
   }
 
+  // 3. Perform block cycle, without MixColumns
   aes_sub_bytes(block);
 
   aes_shift_rows(block);
@@ -540,19 +563,26 @@ static inline void aes_block_encrypt(uint8_t result[16], const uint8_t input[16]
 }
 
 /*
+ * Decrypt encrypted AES block
  *
+ * The algorithm for decrypting is just the algorithm for encrypting,
+ * but in reverse and using inverse functions
+ *
+ * Credit: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard#High-level_description_of_the_algorithm
  */
 static inline void aes_block_decrypt(uint8_t result[16], const uint8_t input[16], const uint8_t* rkeys, uint8_t rounds)
 {
   uint8_t block[16];
   memcpy(block, input, 16);
 
+  // 1. Perform block cycle, without MixColumns
   aes_add_round_key(block, rkeys + 16 * (rounds - 1));
 
   aes_shift_rows_inverse(block);
 
   aes_sub_bytes_inverse(block);
 
+  // 2. Perform block cycle for rounds - 1 times
   for(uint8_t index = (rounds - 2); index-- > 1;)
   {
     aes_add_round_key(block, rkeys + 16 * index);
@@ -564,40 +594,64 @@ static inline void aes_block_decrypt(uint8_t result[16], const uint8_t input[16]
     aes_sub_bytes_inverse(block);
   }
   
+  // 3. Lastly, add round key
   aes_add_round_key(block, rkeys);
 
   memcpy(result, block, 16);
 }
 
 /*
- * Encrypt message using AES key of different sizes
+ * Encrypt message using either AES 128, 192 or 256
+ *
+ * Note: The allocated result must be freed by the caller
+ *
+ * On failure, errno will be sat to indicate error
  *
  * RETURN (int status)
  * - 0 | Success
- * - 1 | Failed to expand key
+ * - 1 | Bad input
+ * - 2 | Invalid key size
+ * - 3 | Failed to allocate memory
  */
-int aes_encrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
+int aes_encrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
 {
-  if(!result || !message || !key) return 1;
+  if (!result || !message || !key)
+  {
+    errno = EFAULT; // Bad address
+
+    return 1;
+  }
+
+  if (ksize != AES_128 && ksize != AES_192 && ksize != AES_256)
+  {
+    errno = EINVAL; // Invalid argument
+
+    return 2;
+  }
 
   // 1. Expand the key
   uint8_t rounds = AES_ROUND_KEYS(ksize);
 
   uint32_t rkeys[4 * rounds];
 
-  if(aes_key_expand(rkeys, (uint32_t*) key, ksize) != 0)
-  {
-    return 2;
-  }
+  aes_key_expand(rkeys, (uint32_t*) key, ksize);
 
   // 2. Allocate memory for the result (AES message)
-  *result = malloc(sizeof(uint8_t) * AES_SIZE(msize));
+  uint8_t* temp_result = malloc(sizeof(uint8_t) * AES_SIZE(msize));
+
+  if (!temp_result)
+  {
+    errno = ENOMEM; // Out of memory
+
+    return 3;
+  }
+
+  *result = temp_result;
 
   if(rsize) *rsize = AES_SIZE(msize);
 
-
   // 3. Encrypt the whole blocks in message
-  size_t index;
+  size_t  index;
   uint8_t block[16];
 
   for(index = 0; index + 16 <= msize; index += 16)
@@ -621,32 +675,55 @@ int aes_encrypt(char** result, size_t* rsize, const void* message, size_t msize,
 }
 
 /*
- * Decrypt AES message using key of different sizes
+ * Decrypt message encrypted with either AES 128, 192 or 256
+ *
+ * Note: The allocated result must be freed by the caller
+ *
+ * On failure, errno will be sat to indicate error
  *
  * RETURN (int status)
  * - 0 | Success
- * - 1 | Failed to expand key
+ * - 1 | Bad input
+ * - 2 | Invalid key size
+ * - 3 | Failed to allocate memory
  */
-int aes_decrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
+int aes_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* key, ksize_t ksize)
 {
-  if(!result || !message || !key) return 1;
+  if (!result || !message || !key)
+  {
+    errno = EFAULT; // Bad address
+
+    return 1;
+  }
+
+  if (ksize != AES_128 && ksize != AES_192 && ksize != AES_256)
+  {
+    errno = EINVAL; // Invalid argument
+
+    return 2;
+  }
 
   // 1. Expand the key
   uint8_t rounds = AES_ROUND_KEYS(ksize);
 
   uint32_t rkeys[4 * rounds];
 
-  if(aes_key_expand(rkeys, (uint32_t*) key, ksize) != 0)
-  {
-    return 2;
-  }
+  aes_key_expand(rkeys, (uint32_t*) key, ksize);
 
   // 2. Allocate memory for the result
-  *result = malloc(sizeof(uint8_t) * msize);
+  uint8_t* temp_result = malloc(sizeof(uint8_t) * msize);
 
+  if (!temp_result)
+  {
+    errno = ENOMEM; // Out of memory
+
+    return 3;
+  }
+
+  *result = temp_result;
 
   // 3. Decrypt the whole blocks in message
-  size_t index;
+  size_t  index;
   uint8_t block[16];
 
   for(index = 0; index + 16 <= msize; index += 16)

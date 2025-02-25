@@ -121,7 +121,7 @@ static error_t opt_parse(int key, char* arg, struct argp_state* state)
 /*
  * Symetric encrypt a message
  */
-static int sym_encrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
+static int sym_encrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
 {
   if(!result || !message || !password) return 1;
 
@@ -134,7 +134,7 @@ static int sym_encrypt(char** result, size_t* rsize, const void* message, size_t
   // 2. Concatonate the hash and the message to get payload
   size_t payload_size = (64 + msize);
 
-  char* payload = malloc(sizeof(char) * payload_size);
+  uint8_t* payload = malloc(sizeof(uint8_t) * payload_size);
 
   memcpy(payload, hash, 64);
 
@@ -160,7 +160,7 @@ static int sym_encrypt(char** result, size_t* rsize, const void* message, size_t
 /*
  * Decrypted a symetric encrypted message
  */
-static int sym_decrypt(char** result, size_t* rsize, const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
+static int sym_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
 {
   if(!result || !message || !password) return 1;
 
@@ -179,7 +179,7 @@ static int sym_decrypt(char** result, size_t* rsize, const void* message, size_t
   sha256(hash, password, psize);
   
   // 2. Decrypt message to get payload
-  char* payload;
+  uint8_t* payload;
   size_t payload_size;
 
   if(aes_decrypt(&payload, &payload_size, message, msize, hash, key_size) != 0)
@@ -206,7 +206,7 @@ static int sym_decrypt(char** result, size_t* rsize, const void* message, size_t
 
   if(rsize) *rsize = result_size;
 
-  *result = malloc(sizeof(char) * result_size);
+  *result = malloc(sizeof(uint8_t) * result_size);
 
   memcpy(*result, payload + 64, result_size);
 
@@ -266,7 +266,7 @@ static char* password_get(void)
  */
 static void encrypt_routine(const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
 {
-  char* result;
+  uint8_t* result;
   size_t rsize;
 
   if(sym_encrypt(&result, &rsize, message, msize, password, psize, key_size) == 0)
@@ -282,7 +282,7 @@ static void encrypt_routine(const void* message, size_t msize, const void* passw
  */
 static void decrypt_routine(const void* message, size_t msize, const void* password, size_t psize, ksize_t key_size)
 {
-  char* result;
+  uint8_t* result;
   size_t rsize;
 
   if(sym_decrypt(&result, &rsize, message, msize, password, psize, key_size) == 0)

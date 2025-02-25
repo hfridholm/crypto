@@ -249,7 +249,7 @@ static void aes_key_generate(char buffer[32])
  * - 0 | Success
  * - 1 | Supplied arguments invalid
  */
-static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t msize, pkey_t* pkey)
+static int asm_encrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, pkey_t* pkey)
 {
   if(!result || !message || !pkey) return 1;
 
@@ -268,7 +268,7 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
 
   // 3. Encrypt the message using the AES key
   size_t aes_size;
-  char* aes_message;
+  uint8_t* aes_message;
 
   if(aes_encrypt(&aes_message, &aes_size, message, msize, aes_key, AES_256) != 0)
   {
@@ -281,10 +281,10 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
 
   if(rsize) *rsize = result_size;
 
-  *result = malloc(sizeof(char) * result_size);
+  *result = malloc(sizeof(uint8_t) * result_size);
 
   // 1. First comes the RSA encrypted size
-  *result[0] = (char) rsa_size;
+  *result[0] = (uint8_t) rsa_size;
 
   // 2. Then comes the RSA encrypted AES key
   memcpy(*result + 1, aes_key_enc, rsa_size);
@@ -306,7 +306,7 @@ static int asm_encrypt(char** result, size_t* rsize, const void* message, size_t
  * - 0 | Success
  * - 1 | Supplied arguments invalid
  */
-static int asm_decrypt(char** result, size_t* rsize, const void* message, size_t msize, skey_t* skey)
+static int asm_decrypt(uint8_t** result, size_t* rsize, const void* message, size_t msize, skey_t* skey)
 {
   if(!result || !message || !skey) return 1;
 
@@ -357,7 +357,7 @@ static void encrypt_routine(const void* message, size_t size)
     return;
   }
 
-  char* result;
+  uint8_t* result;
   size_t rsize;
 
   if(asm_encrypt(&result, &rsize, message, size, &pkey) == 0)
@@ -385,7 +385,7 @@ static void decrypt_routine(const void* message, size_t size)
     return;
   }
 
-  char* result;
+  uint8_t* result;
   size_t rsize;
 
   if(asm_decrypt(&result, &rsize, message, size, &skey) == 0)
