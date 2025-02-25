@@ -9,7 +9,7 @@
  * In main compilation unit; define AES_IMPLEMENT
  *
  *
- * int  rsa_keys_generate(skey_t* skey, pkey_t* pkey)
+ * int  rsa_keys_gen(skey_t* skey, pkey_t* pkey)
  *
  *
  * int  rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key)
@@ -63,7 +63,7 @@ typedef struct
   mpz_t q; // Prime q
 } skey_t;
 
-extern int  rsa_keys_generate(skey_t* skey, pkey_t* pkey);
+extern int  rsa_keys_gen(skey_t* skey, pkey_t* pkey);
 
 
 extern int  rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key);
@@ -164,7 +164,7 @@ static inline int rsa_choose_d(mpz_t d, const mpz_t e, const mpz_t phi)
  * EXPECT
  * - prime is initted and allocated
  */
-static inline void rsa_prime_generate(mpz_t prime)
+static inline void rsa_prime_gen(mpz_t prime)
 {
   char buffer[BUFFER_SIZE];
 
@@ -215,15 +215,15 @@ static inline void rsa_prime_tweak(mpz_t prime, mpz_t e)
  *
  * The primes should not be the same number
  */
-static inline void rsa_primes_generate(mpz_t p, mpz_t q, mpz_t e)
+static inline void rsa_primes_gen(mpz_t p, mpz_t q, mpz_t e)
 {
-  rsa_prime_generate(p);
+  rsa_prime_gen(p);
 
   rsa_prime_tweak(p, e);
 
   do
   {
-    rsa_prime_generate(q);
+    rsa_prime_gen(q);
 
     rsa_prime_tweak(q, e);
   }
@@ -235,7 +235,7 @@ static inline void rsa_primes_generate(mpz_t p, mpz_t q, mpz_t e)
  *
  * Probably: Only do the operation once, and remove the for loop
  */
-static inline void rsa_key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz_t phi)
+static inline void rsa_key_values_gen(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t d, mpz_t phi)
 {
   // 1. Choose e
   mpz_set_ui(e, 3);
@@ -243,7 +243,7 @@ static inline void rsa_key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, m
   for(size_t count = 1; count <= 100; count++)
   {
     // 2. Generate large primes p and q
-    rsa_primes_generate(p, q, e);
+    rsa_primes_gen(p, q, e);
 
     // 3. Multiply p and q to get n
     mpz_mul(n, p, q);
@@ -261,13 +261,13 @@ static inline void rsa_key_values_generate(mpz_t p, mpz_t q, mpz_t n, mpz_t e, m
 /*
  * Generate the secret and the public keys
  */
-int rsa_keys_generate(skey_t* skey, pkey_t* pkey)
+int rsa_keys_gen(skey_t* skey, pkey_t* pkey)
 {
   mpz_t p, q, n, e, d, phi;
 
   mpz_inits(p, q, n, e, d, phi, NULL);
 
-  rsa_key_values_generate(p, q, n, e, d, phi);
+  rsa_key_values_gen(p, q, n, e, d, phi);
 
   if(pkey)
   {

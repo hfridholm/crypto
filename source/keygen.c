@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
   skey_t skey;
   pkey_t pkey;
 
-  rsa_keys_generate(&skey, &pkey);
+  rsa_keys_gen(&skey, &pkey);
 
 
   if(pkey_handler(&pkey) != 0)

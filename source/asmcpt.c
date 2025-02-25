@@ -233,7 +233,7 @@ static int skey_get(skey_t* key)
 /*
  * Generate random bytes as the key used for encryption
  */
-static void aes_key_generate(char buffer[32])
+static void aes_key_gen(char buffer[32])
 {
   for(size_t index = 0; index < 32; index++)
   {
@@ -257,7 +257,7 @@ static int asm_encrypt(uint8_t** result, size_t* rsize, const void* message, siz
   // 1. Generate AES key
   char aes_key[32];
 
-  aes_key_generate(aes_key);
+  aes_key_gen(aes_key);
 
   // 2. Encrypt the AES key using RSA
   char aes_key_enc[ENCRYPT_SIZE];
