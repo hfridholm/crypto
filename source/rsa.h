@@ -6,10 +6,10 @@
  * Last updated: 2025-02-25
  *
  *
- * In main compilation unit; define AES_IMPLEMENT
+ * In main compilation unit; define RSA_IMPLEMENT
  *
  *
- * int  rsa_keys_gen(skey_t* skey, pkey_t* pkey)
+ * void rsa_keys_gen(skey_t* skey, pkey_t* pkey)
  *
  *
  * int  rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key)
@@ -63,7 +63,7 @@ typedef struct
   mpz_t q; // Prime q
 } skey_t;
 
-extern int  rsa_keys_gen(skey_t* skey, pkey_t* pkey);
+extern void rsa_keys_gen(skey_t* skey, pkey_t* pkey);
 
 
 extern int  rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key);
@@ -99,6 +99,7 @@ extern void rsa_pkey_free(pkey_t* key);
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 /*
  * Duplicate a mpz_t variable
@@ -261,7 +262,7 @@ static inline void rsa_key_values_gen(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t 
 /*
  * Generate the secret and the public keys
  */
-int rsa_keys_gen(skey_t* skey, pkey_t* pkey)
+void rsa_keys_gen(skey_t* skey, pkey_t* pkey)
 {
   mpz_t p, q, n, e, d, phi;
 
@@ -285,8 +286,6 @@ int rsa_keys_gen(skey_t* skey, pkey_t* pkey)
   }
 
   mpz_clears(p, q, n, e, d, phi, NULL);
-
-  return 0;
 }
 
 /*
@@ -315,7 +314,12 @@ typedef struct
  */
 int rsa_pkey_encode(char** result, size_t* size, const pkey_t* key)
 {
-  if (!result || !size || !key) return 1;
+  if (!result || !size || !key)
+  {
+    errno = EFAULT; // Bad address
+
+    return 1;
+  }
 
   // 1. Serialize the public key cryptography values
   pkey_enc_t key_enc = { 0 };
@@ -328,9 +332,18 @@ int rsa_pkey_encode(char** result, size_t* size, const pkey_t* key)
   // 2. Allocate and populate result
   size_t result_size = sizeof(pkey_enc_t);
 
-  if (size) *size = result_size;
+  char* temp_result = malloc(sizeof(char) * result_size);
 
-  *result = malloc(sizeof(char) * result_size);
+  if (!temp_result)
+  {
+    errno = ENOMEM; // Out of memory
+
+    return 2;
+  }
+
+  *result = temp_result;
+
+  if (size) *size = result_size;
 
   memcpy(*result, &key_enc, sizeof(pkey_enc_t));
 
@@ -360,9 +373,19 @@ void rsa_pkey_free(pkey_t* key)
  */
 int rsa_pkey_decode(pkey_t* key, const void* message, size_t size)
 {
-  if (!key || !message) return 1;
+  if (!key || !message)
+  {
+    errno = EFAULT; // Bad address
 
-  if (size != sizeof(pkey_enc_t)) return 2;
+    return 1;
+  }
+
+  if (size != sizeof(pkey_enc_t))
+  {
+    errno = EINVAL; // Invalid argument
+
+    return 2;
+  }
 
   pkey_enc_t key_enc = { 0 };
 
@@ -399,7 +422,12 @@ typedef struct
  */
 int rsa_skey_encode(char** result, size_t* size, const skey_t* key)
 {
-  if (!result || !size || !key) return 1;
+  if (!result || !size || !key)
+  {
+    errno = EFAULT; // Bad address
+
+    return 1;
+  }
 
   // 1. Serialize the secret key cryptography values
   skey_enc_t key_enc = { 0 };
@@ -418,9 +446,18 @@ int rsa_skey_encode(char** result, size_t* size, const skey_t* key)
   // 2. Allocate and populate memory of result
   size_t result_size = sizeof(skey_enc_t);
 
-  if (size) *size = result_size;
+  char* temp_result = malloc(sizeof(char) * result_size);
 
-  *result = malloc(sizeof(char) * result_size);
+  if (!temp_result)
+  {
+    errno = ENOMEM; // Out of memory
+
+    return 2;
+  }
+
+  *result = temp_result;
+
+  if (size) *size = result_size;
 
   memcpy(*result, &key_enc, sizeof(skey_enc_t));
 
@@ -456,9 +493,19 @@ void rsa_skey_free(skey_t* key)
  */
 int rsa_skey_decode(skey_t* key, const void* message, size_t size)
 {
-  if (!key || !message) return 1;
+  if (!key || !message)
+  {
+    errno = EFAULT; // Bad address
 
-  if (size != sizeof(skey_enc_t)) return 2;
+    return 1;
+  }
+
+  if (size != sizeof(skey_enc_t))
+  {
+    errno = EINVAL; // Invalid argument
+
+    return 2;
+  }
 
   skey_enc_t key_enc = { 0 };
 
@@ -484,7 +531,12 @@ int rsa_skey_decode(skey_t* key, const void* message, size_t size)
  */
 int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key)
 {
-  if (size > MESSAGE_SIZE) return 1;
+  if (size > MESSAGE_SIZE)
+  {
+    errno = EINVAL; // Invalid argument
+
+    return 1;
+  }
 
   mpz_t m, r;
 
@@ -513,7 +565,12 @@ int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, p
  */
 int rsa_decrypt(void* result, size_t* rsize, const void* message, size_t size, skey_t* key)
 {
-  if (size > ENCRYPT_SIZE) return 1;
+  if (size > ENCRYPT_SIZE)
+  {
+    errno = EINVAL; // Invalid argument
+
+    return 1;
+  }
 
   mpz_t m, r;
 
