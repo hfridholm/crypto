@@ -138,7 +138,7 @@ static inline void mpz_phi(mpz_t phi, const mpz_t p, const mpz_t q)
  */
 static inline int rsa_choose_d(mpz_t d, const mpz_t e, const mpz_t phi)
 {
-  if(mpz_invert(d, e, phi) != 0) return 0;
+  if (mpz_invert(d, e, phi) != 0) return 0;
 
   mpz_t tmp;
   mpz_init(tmp);
@@ -168,7 +168,7 @@ static inline void rsa_prime_gen(mpz_t prime)
 {
   char buffer[BUFFER_SIZE];
 
-  for(int index = 0; index < BUFFER_SIZE; index++)
+  for (int index = 0; index < BUFFER_SIZE; index++)
   {
     buffer[index] = rand() % 0xFF;
   }
@@ -198,7 +198,7 @@ static inline void rsa_prime_tweak(mpz_t prime, mpz_t e)
   mpz_mod(tmp, prime, e);
 
   // prime must not be congruent to 1 mod e
-  while(mpz_cmp_ui(tmp, 1) == 0)
+  while (mpz_cmp_ui(tmp, 1) == 0)
   {
     mpz_nextprime(prime, prime);
 
@@ -227,7 +227,7 @@ static inline void rsa_primes_gen(mpz_t p, mpz_t q, mpz_t e)
 
     rsa_prime_tweak(q, e);
   }
-  while(mpz_cmp(p, q) == 0);
+  while (mpz_cmp(p, q) == 0);
 }
 
 /*
@@ -240,7 +240,7 @@ static inline void rsa_key_values_gen(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t 
   // 1. Choose e
   mpz_set_ui(e, 3);
 
-  for(size_t count = 1; count <= 100; count++)
+  for (size_t count = 1; count <= 100; count++)
   {
     // 2. Generate large primes p and q
     rsa_primes_gen(p, q, e);
@@ -252,7 +252,7 @@ static inline void rsa_key_values_gen(mpz_t p, mpz_t q, mpz_t n, mpz_t e, mpz_t 
     mpz_phi(phi, p, q);
 
     // 5. Choose d
-    if(rsa_choose_d(d, e, phi) == 0) break;
+    if (rsa_choose_d(d, e, phi) == 0) break;
 
     printf("Failed to generate key values: %ld\n", count);
   }
@@ -269,13 +269,13 @@ int rsa_keys_gen(skey_t* skey, pkey_t* pkey)
 
   rsa_key_values_gen(p, q, n, e, d, phi);
 
-  if(pkey)
+  if (pkey)
   {
     mpz_dup(pkey->n, n);
     mpz_dup(pkey->e, e);
   }
 
-  if(skey)
+  if (skey)
   {
     mpz_dup(skey->n, n);
     mpz_dup(skey->e, e);
@@ -294,9 +294,9 @@ int rsa_keys_gen(skey_t* skey, pkey_t* pkey)
  */
 void rsa_keys_free(skey_t* skey, pkey_t* pkey)
 {
-  if(pkey) rsa_pkey_free(pkey);
+  if (pkey) rsa_pkey_free(pkey);
 
-  if(skey) rsa_skey_free(skey);
+  if (skey) rsa_skey_free(skey);
 }
 
 typedef struct
@@ -315,7 +315,7 @@ typedef struct
  */
 int rsa_pkey_encode(char** result, size_t* size, const pkey_t* key)
 {
-  if(!result || !size || !key) return 1;
+  if (!result || !size || !key) return 1;
 
   // 1. Serialize the public key cryptography values
   pkey_enc_t key_enc = { 0 };
@@ -328,7 +328,7 @@ int rsa_pkey_encode(char** result, size_t* size, const pkey_t* key)
   // 2. Allocate and populate result
   size_t result_size = sizeof(pkey_enc_t);
 
-  if(size) *size = result_size;
+  if (size) *size = result_size;
 
   *result = malloc(sizeof(char) * result_size);
 
@@ -360,9 +360,9 @@ void rsa_pkey_free(pkey_t* key)
  */
 int rsa_pkey_decode(pkey_t* key, const void* message, size_t size)
 {
-  if(!key || !message) return 1;
+  if (!key || !message) return 1;
 
-  if(size != sizeof(pkey_enc_t)) return 2;
+  if (size != sizeof(pkey_enc_t)) return 2;
 
   pkey_enc_t key_enc = { 0 };
 
@@ -399,7 +399,7 @@ typedef struct
  */
 int rsa_skey_encode(char** result, size_t* size, const skey_t* key)
 {
-  if(!result || !size || !key) return 1;
+  if (!result || !size || !key) return 1;
 
   // 1. Serialize the secret key cryptography values
   skey_enc_t key_enc = { 0 };
@@ -418,7 +418,7 @@ int rsa_skey_encode(char** result, size_t* size, const skey_t* key)
   // 2. Allocate and populate memory of result
   size_t result_size = sizeof(skey_enc_t);
 
-  if(size) *size = result_size;
+  if (size) *size = result_size;
 
   *result = malloc(sizeof(char) * result_size);
 
@@ -456,9 +456,9 @@ void rsa_skey_free(skey_t* key)
  */
 int rsa_skey_decode(skey_t* key, const void* message, size_t size)
 {
-  if(!key || !message) return 1;
+  if (!key || !message) return 1;
 
-  if(size != sizeof(skey_enc_t)) return 2;
+  if (size != sizeof(skey_enc_t)) return 2;
 
   skey_enc_t key_enc = { 0 };
 
@@ -484,7 +484,7 @@ int rsa_skey_decode(skey_t* key, const void* message, size_t size)
  */
 int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, pkey_t* key)
 {
-  if(size > MESSAGE_SIZE) return 1;
+  if (size > MESSAGE_SIZE) return 1;
 
   mpz_t m, r;
 
@@ -513,7 +513,7 @@ int rsa_encrypt(void* result, size_t* rsize, const void* message, size_t size, p
  */
 int rsa_decrypt(void* result, size_t* rsize, const void* message, size_t size, skey_t* key)
 {
-  if(size > ENCRYPT_SIZE) return 1;
+  if (size > ENCRYPT_SIZE) return 1;
 
   mpz_t m, r;
 
